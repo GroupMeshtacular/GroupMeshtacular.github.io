@@ -12,7 +12,7 @@ This repository serves as our **documented journey** as we build our **networkin
 ---
 
 ## 📌 **What is Meshtacular?**
-Meshtacular is an **innovative, tech-savvy team** focused on developing **secure, efficient, and scalable** networking solutions. This repository will serve as:
+Meshtacular is a **group of Undergrads at Georgia State University** focused on developing **secure, efficient, and innovative** software. This repository will serve as:
 - 📂 A **landing page** for our group’s progress.
 - 📡 A hub for **our networking-based projects**.
 - 🛠 A place to **document our coding journey** and discoveries.
