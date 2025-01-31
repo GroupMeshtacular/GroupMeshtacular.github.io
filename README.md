@@ -1,2 +1,1 @@
-# GroupMeshtacular.github.io
-Computer Networks ACS36 Project 1: Website (Robert Stanley, Sean G, Luca Maddaleni) Group Meshtacular
+Hello Everyone! This is the landing page for our group, Meshtacular! Our group consists of Sean Griffiths, Luca Maddaleni, and Robert Stanley. This README will be a placeholder where we document our journey in building this website. Another goal of this landing page will be hosting our upcoming projects that we build, together! As the website development and projects progress, we will update this document accordingly.
