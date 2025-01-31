@@ -3,9 +3,9 @@
 🚀 **Hello Everyone!** Welcome to the official landing page for **Group Meshtacular**! 
 
 ### **👥 Our Team**
-- 🧑‍💻 **Sean Griffiths**
+- 🔥 **Sean Griffiths**
 - 🏗 **Luca Maddaleni**
-- 🔥 **Robert Stanley**
+- 🧑‍💻 **Robert Stanley**
 
 This repository serves as our **documented journey** as we build our **networking-based website** and explore exciting **computer networking projects** together.
 
