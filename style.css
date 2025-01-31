@@ -32,7 +32,7 @@ header h1 {
 /* Section Styling */
 section {
     max-width: 800px;
-    margin: 0 auto;
+    margin: 20px auto;
     background: rgba(255, 255, 255, 0.1);
     padding: 20px;
     border-radius: 10px;
@@ -62,6 +62,16 @@ th, td {
 
 th {
     background-color: #161b22;
+}
+
+/*remove bullets from lists */
+ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+li {
+    margin: 5px 0;
 }
 
 /* Security Section Styling */
