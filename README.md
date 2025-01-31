@@ -4,8 +4,8 @@
 
 ### **👥 Our Team**
 - 🔥 **Sean Griffiths**
-- 🏗 **Luca Maddaleni**
-- 🧑‍💻 **Robert Stanley**
+- 🏴‍☠️ **Luca Maddaleni**
+- ⚡ **Robert Stanley**
 
 This repository serves as our **documented journey** as we build our **networking-based website** and explore exciting **computer networking projects** together.
 
