@@ -10,6 +10,7 @@ body {
     color: #bebebe;
     margin: 0;
     list-style: none;
+    overflow-x: hidden;
 }
 
 /* Header Styling */
@@ -21,6 +22,9 @@ header {
     margin-bottom: 20px;
     text-transform: uppercase;
     letter-spacing: 2px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 header h1 {
@@ -28,6 +32,7 @@ header h1 {
     font-weight: 600;
     color: #f1c40f;
     margin: 0;
+    animation: flicker 2s infinite alternative;
 }
 
 /* Section Styling */
@@ -38,6 +43,7 @@ section {
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 1.5s ease-in;
 }
 
 section h2 {
@@ -50,6 +56,7 @@ table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 15px;
+    animation: slideIn 1s ease-out;
 }
 
 table, th, td {
@@ -87,6 +94,7 @@ li {
     text-align: left;
     box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
     border-left: 5px solid #f1c40f;
+    animation: zoomIn 1s ease-in;
 }
 
 .security-notice h2 {
@@ -130,6 +138,12 @@ li {
     border-radius: 5px;
     margin-bottom: 10px;
     box-shadow: 0px 2px 5px rgba(255, 255, 255, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.project-list li:hover {
+    transform: scale(1.05);
+    box-shadow: 0px 4px 10px rgba(255, 255, 255, 0.2);
 }
 
 /* Footer Styling */
@@ -144,6 +158,52 @@ footer {
 footer h2 {
     color: #f1c40f;
     font-size: 20px;
+}
+
+/* Keyframe Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes zoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes flicker {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
+    }
 }
 
 
