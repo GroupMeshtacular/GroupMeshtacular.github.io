@@ -100,16 +100,24 @@ li {
 .security-notice h2 {
     color: #f1c40f;
     font-size: 22px;
+    word-wrap: break-word; /* wrap words to prevent layout bleed */
+    text-align: center; /* align heading fix */
+    margin: 10px auto; /* uniform the spacing more */
 }
 
 .security-notice ul {
     list-style-type: none;
     padding: 0;
+    margin: 10px 0; /* increase list spacing */
+    max-width: 100%; /* reduce overflow on mobile viewing */
+    overflow-wrap: break-word; /* long content overflow fix */
 }
 
 .security-notice li {
     padding: 5px 0;
     font-size: 16px;
+    max-width: 100%; /* house text in container better */
+    word-wrap: break-word; /* fix text overflow issues*/
 }
 
 /* Terminal-like Text Effect */
