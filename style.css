@@ -89,7 +89,7 @@ li {
     background-color: rgba(236, 240, 241, 0.2);
     padding: 20px;
     border-radius: 10px;
-    width: 80%;
+    max-width: 800px;
     margin: 20px auto;
     text-align: left;
     box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
