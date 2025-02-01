@@ -89,13 +89,14 @@ li {
     background-color: rgba(236, 240, 241, 0.2);
     padding: 20px;
     border-radius: 10px;
-    max-width: 800px;
+    max-width: 100%;
     margin: 20px auto;
     text-align: left;
     box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
     border-left: 5px solid #f1c40f;
     word-wrap: break-word; /* reduce long content overflow further */
     overflow-x: hidden; /* reduce horizontal scrolling on the x-axis for mobile */
+    box-sizing: border-box; /* keeps padding included in total width of table */
     animation: zoomIn 1s ease-in;
 }
 
@@ -105,6 +106,7 @@ li {
     word-wrap: break-word; /* wrap words to prevent layout bleed */
     text-align: center; /* align heading fix */
     margin: 10px auto; /* uniform the spacing more */
+    max-width: 100%; /* further attempt to reduce heading overflow */
 }
 
 .security-notice ul {
@@ -113,7 +115,7 @@ li {
     margin: 10px 0; /* increase list spacing */
     max-width: 100%; /* reduce overflow on mobile viewing */
     word-wrap: break-word;
-    overflow-wrap: anywhere; /* long content overflow fix, wrap text in container for mobile */
+    overflow-wrap: break-word; /* long content overflow fix, wrap text in container for mobile */
 }
 
 .security-notice li {
@@ -122,6 +124,7 @@ li {
     max-width: 100%; /* house text in container better */
     word-wrap: break-word; /* fix text overflow issues*/
     overflow-wrap: break-word;
+    box-sizing: border-box; /* further attempt to fix layout on mobile */
 }
 
 /* Terminal-like Text Effect */
