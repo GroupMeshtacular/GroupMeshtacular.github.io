@@ -23,9 +23,9 @@ Meshtacular is a **group of Undergrads at Georgia State University** focused on 
 | Phase | Task | Status |
 |-------|------|--------|
 | 🟢 | **Setup GitHub Pages** | ✅ Completed |
-| 🟡 | **Implement Website Design** | 🔨 In Progress |
-| 🔴 | **Develop Core Networking Features** | 🔜 Coming Soon |
-| 🟣 | **Optimize & Deploy** | ⏳ Pending |
+| 🟡 | **Implement Website Design** | ✅ Completed |
+| 🔴 | **Develop Core Networking Features** | ✅ Completed |
+| 🟣 | **Optimize & Deploy** | ✅ Completed |
 
 🔍 _We will continue updating this README as we make progress!_
 
