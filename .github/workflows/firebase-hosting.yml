@@ -50,13 +50,25 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      # ✅ Fix: Correctly Authenticate with Firebase Using Service Account
-      - name: Setup Firebase Authentication
+      # ✅ Step 1: Debugging - Check if Firebase Service Account is Written Correctly
+      - name: Setup Firebase Authentication & Debug
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
+          echo "🔥 Writing Firebase Service Account JSON to file..."
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$HOME/firebase-key.json"
+
+          echo "🔍 Setting GOOGLE_APPLICATION_CREDENTIALS..."
           export GOOGLE_APPLICATION_CREDENTIALS="$HOME/firebase-key.json"
+
+          echo "📂 Checking if JSON file exists..."
+          ls -la $HOME/firebase-key.json || echo "❌ firebase-key.json NOT FOUND!"
+
+          echo "📄 Displaying first few lines of the file..."
+          head -n 5 $HOME/firebase-key.json || echo "❌ Cannot read firebase-key.json"
+
+          echo "🛠️ Verifying JSON format..."
+          cat $HOME/firebase-key.json | jq . || echo "❌ Invalid JSON format!"
 
       # ✅ Deploy a preview for PRs
       - name: Deploy PR Preview
@@ -72,4 +84,9 @@ jobs:
         if: github.ref == 'refs/heads/main'
         env:
           GOOGLE_APPLICATION_CREDENTIALS: "$HOME/firebase-key.json"
-        run: npx firebase-tools deploy --only hosting
+        run: |
+          echo "✅ Checking GOOGLE_APPLICATION_CREDENTIALS..."
+          echo $GOOGLE_APPLICATION_CREDENTIALS
+
+          echo "🚀 Deploying to Firebase Hosting..."
+          npx firebase-tools deploy --only hosting
