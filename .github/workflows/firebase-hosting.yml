@@ -85,8 +85,8 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: "$HOME/firebase-key.json"
         run: |
-          echo "✅ Checking GOOGLE_APPLICATION_CREDENTIALS..."
-          echo $GOOGLE_APPLICATION_CREDENTIALS
+          echo "✅ Checking if Firebase Service Account JSON file exists..."
+          ls -la $HOME/firebase-key.json || echo "❌ firebase-key.json NOT FOUND!"
 
-          echo "🚀 Deploying to Firebase Hosting..."
-          npx firebase-tools deploy --only hosting
+          echo "📄 Displaying first few lines of the Service Account JSON..."
+          head -n 5 $HOME/firebase-key.json || echo "❌ Cannot read firebase-key.json"
