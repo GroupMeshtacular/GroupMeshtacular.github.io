@@ -47,6 +47,10 @@ jobs:
       - name: Install Dependencies
         run: npm ci && npm run build
 
+
+      - name: Install Firebase CLI  #Install Firebase before deploy
+        run: npm install -g firebase-tools
+
       # Deploy a preview for PRs
       - name: Deploy PR Preview
         if: github.event_name == 'pull_request'
