@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "group-meshtacular"
     "public": "public",
     "ignore": [
       "firebase.json",
