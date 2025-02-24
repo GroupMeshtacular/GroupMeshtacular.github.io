@@ -3,6 +3,8 @@ const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const csrf = require('csurf');
 const path = require('path');
+require('dotenv').config();
+
 
 const app = express();
 
@@ -13,7 +15,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-//Define rate limiter configuration
+//Define rate limiter configuration to prevent Brute-Force Attacks
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,  //15 miniutes
     max: 100,   //limits IP up to 100 requests per window
@@ -40,6 +42,17 @@ app.use((err, req, res, next) => {
     }
     next(err);
 });
+
+const functions = require("firebase-functions");
+
+const firebaseConfig = {
+    apiKey: functions.config().config.firebase_api_key,
+    authDomain: functions.config().config.firebase_auth_domain,
+    projectId: functions.config().config.firebase_project_id,
+    storageBucket: functions.config().config.firebase_storage_bucket,
+    messagingSenderId: functions.config().config.firebase_messaging_sender_id,
+    appId: functions.config().config.firebase_app_id
+};
 
 //Start Server
 const PORT = process.env.PORT || 3000;
