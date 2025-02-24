@@ -68,5 +68,4 @@ node_modules/
 # dataconnect generated files
 .dataconnect
 .env
-firebase.json
-.firebaserc
+
