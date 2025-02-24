@@ -72,9 +72,9 @@ jobs:
       - name: Deploy to Firebase Hosting
         if: github.ref == 'refs/heads/main'
         env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GOOGLE_APPLICATION_CREDENTIALS: "$HOME/firebase-key.json"
         run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$HOME/firebase-key.json"
-          export GOOGLE_APPLICATION_CREDENTIALS="$HOME/firebase-key.json"
-          npx firebase-tools deploy --only hosting --token "$GOOGLE_APPLICATION_CREDENTIALS"
+          echo "Checking firebase.json for hosting configuration..."
+          cat firebase.json || echo "firebase.json not found!"
+          npx firebase-tools deploy --only hosting
 
