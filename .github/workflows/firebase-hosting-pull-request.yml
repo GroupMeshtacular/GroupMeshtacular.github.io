@@ -51,6 +51,14 @@ jobs:
       - name: Install Firebase CLI  #Install Firebase before deploy
         run: npm install -g firebase-tools
 
+      # Authenticate with Firebase Using Service Account
+      - name: Authenticate with Firebase
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT" > $HOME/firebase-key.json
+          export GOOGLE_APPLICATION_CREDENTIALS="$HOME/firebase-key.json"
+
       # Deploy a preview for PRs
       - name: Deploy PR Preview
         if: github.event_name == 'pull_request'
@@ -70,6 +78,6 @@ jobs:
           FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
           FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
           FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
-        run: npx firebase-tools deploy --only hosting
+        run: npx firebase-tools deploy --only hosting --token "$GOOGLE_APPLICATION_CREDENTIALS"
 
 
