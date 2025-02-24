@@ -41,7 +41,7 @@ Meshtacular is a **group of Undergrads at Georgia State University** focused on 
 ---
 
 ## 💻 **How to Access the Website**
-🎯 Check out our **live site** here: [Meshtacular Website](https://groupmeshtacular.github.io/)
+🎯 Check out our **live site** here: [Meshtacular Website](https://group-meshtacular.web.app/)
 
 To clone this repository locally:
 
