@@ -99,20 +99,28 @@ Spring Semester 2025-->
     <!-- Dashboard (Only visible after login) -->
     <div id="dashboard" style="display:none;">
         <h2>Dashboard</h2>
-        <p>Welcome, user! You are now logged in.</p>
+        <p>Welcome, <span id="user-email"></span>! You are now logged in.</p>
+        
+        <h3>Your Feedback</h3>
+        <div id="feedback-messages"></div>
+
         <button id="logout">Logout</button>
     </div>
 
-    <!--allow users to submit feedback if they have an account-->
+    <!-- Feedback Form (Users Must Be Logged In to Submit) -->
     <form id="feedback-form">
         <label for="feedback">Your Feedback:</label>
         <textarea id="feedback" name="feedback" required></textarea>
-        <button type="submit">Submit</button>
+        <button type="submit">Submit Feedback</button>
     </form>
 
+    <!-- Feedback Messages (Only Shows Logged-in User's Feedback) -->
+    <h3>Your Submitted Feedback</h3>
+    <div id="feedback-messages"></div>
 
+    <!-- Firebase Feedback Handling -->
     <script type="module">
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, orderBy, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const auth = getAuth();
@@ -121,37 +129,55 @@ Spring Semester 2025-->
         const feedbackForm = document.getElementById("feedback-form");
         const feedbackMessages = document.getElementById("feedback-messages");
 
-        // ✅ Submit Feedback to Firestore
+        // Submit Feedback to Firestore (Only for Logged-In Users)
         feedbackForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const feedback = document.getElementById("feedback").value;
+            const feedbackText = document.getElementById("feedback").value;
             const user = auth.currentUser;
 
             if (user) {
-                await addDoc(collection(db, "feedback"), {
-                    userId: user.uid,
-                    email: user.email,
-                    feedback: feedback,
-                    timestamp: new Date()
-                });
-                alert("Feedback submitted!");
-                feedbackForm.reset();
+                try {
+                    await addDoc(collection(db, "feedback"), {
+                        userId: user.uid,
+                        email: user.email,
+                        feedback: feedbackText,
+                        timestamp: new Date()
+                    });
+
+                    alert("✅ Feedback submitted!");
+                    feedbackForm.reset();
+                    loadUserFeedback(user.uid);
+                } catch (error) {
+                    alert("⚠️ Error submitting feedback: " + error.message);
+                }
             } else {
-                alert("You must be logged in to submit feedback.");
+                alert("⚠️ You must be logged in to submit feedback.");
             }
         });
 
-        // ✅ Listen for New Feedback Messages in Firestore (Live Updates)
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                const q = query(collection(db, "feedback"), orderBy("timestamp", "desc"));
-                onSnapshot(q, (snapshot) => {
-                    feedbackMessages.innerHTML = "";
+        // Load Only User-Specific Feedback
+        function loadUserFeedback(userId) {
+            const q = query(collection(db, "feedback"), where("userId", "==", userId), orderBy("timestamp", "desc"));
+            
+            onSnapshot(q, (snapshot) => {
+                feedbackMessages.innerHTML = "";
+                if (snapshot.empty) {
+                    feedbackMessages.innerHTML = "<p>No feedback submitted yet.</p>";
+                } else {
                     snapshot.forEach((doc) => {
                         const data = doc.data();
                         feedbackMessages.innerHTML += `<p><strong>${data.email}:</strong> ${data.feedback}</p>`;
                     });
-                });
+                }
+            });
+        }
+
+        // Detect Authentication State & Load Feedback
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loadUserFeedback(user.uid);
+            } else {
+                feedbackMessages.innerHTML = "<p>⚠️ Please log in to view your feedback.</p>";
             }
         });
     </script>
