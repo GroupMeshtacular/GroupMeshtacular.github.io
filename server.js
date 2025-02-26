@@ -3,9 +3,24 @@ const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const csrf = require('csurf');
 const path = require('path');
-const admin = require('firebase-admin')
 require('dotenv').config();
+console.log("FIREBASE_ADMIN_SDK:", process.env.FIREBASE_ADMIN_SDK);
 
+// 🚨 Check if FIREBASE_ADMIN_SDK is loaded properly
+if (!process.env.FIREBASE_ADMIN_SDK || process.env.FIREBASE_ADMIN_SDK.trim().length < 50) {
+    throw new Error("❌ FIREBASE_ADMIN_SDK is missing or incorrectly formatted. Check .env file.");
+}
+
+// ✅ Parse the Firebase Admin SDK JSON
+let serviceAccount;
+try {
+    // ✅ Ensure we properly unescape \n in the private_key field
+    const fixedJson = process.env.FIREBASE_ADMIN_SDK.replace(/\\\\n/g, '\\n');
+    serviceAccount = JSON.parse(fixedJson);
+} catch (error) {
+    console.error("❌ Failed to parse FIREBASE_ADMIN_SDK JSON. Check .env formatting.", error);
+    throw error;
+}
 
 const app = express();
 
@@ -55,8 +70,6 @@ app.use((err, req, res, next) => {
     next(err);
 });
 
-const functions = require("firebase-functions");
-
 const firebaseConfig = {
     apiKey: process.env.FIREBASE_API_KEY,
     authDomain: process.env.FIREBASE_AUTH_DOMAIN,
@@ -66,14 +79,16 @@ const firebaseConfig = {
     appId: process.env.FIREBASE_APP_ID
 };
 
-const serviceAccount = JSON.parse(
-    process.env.FIREBASE_ADMIN_SDK.replace(/\\n/g, "\n") // Fix newline formatting
-);
 
-// Firebase Admin Setup
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-});
+const admin = require("firebase-admin");
+
+if (admin.apps.length === 0) {
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        databaseURL: `https://${firebaseConfig.projectId}.firebaseio.com`
+    });
+}
+
 const db = admin.firestore();
 
 // Assign Admin Role to a User (Run Once)
@@ -124,6 +139,30 @@ app.get("/admin-feedback", async (req, res) => {
         return res.status(500).json({ error: "Internal server error." });
     }
 });
+
+// Route to Submit Feedback
+app.post("/submit-feedback", async (req, res) => {
+    const { userId, message } = req.body;
+
+    if (!userId || !message) {
+        return res.status(400).json({ error: "User ID and message are required." });
+    }
+
+    try {
+        // Save feedback to Firestore
+        await db.collection("feedback").add({
+            userId,
+            message,
+            timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        return res.status(201).json({ message: "Feedback submitted successfully!" });
+    } catch (error) {
+        console.error("Error submitting feedback:", error);
+        return res.status(500).json({ error: "Internal server error." });
+    }
+});
+
 
 
 //Start Server
