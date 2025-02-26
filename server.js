@@ -163,6 +163,30 @@ app.post("/submit-feedback", async (req, res) => {
     }
 });
 
+// Secure Route: Get User's Own Feedback
+app.get("/user-feedback", async (req, res) => {
+    const { userId } = req.query; // Get the signed-in user's ID
+
+    if (!userId) {
+        return res.status(400).json({ error: "User ID is required." });
+    }
+
+    try {
+        // Retrieve only the feedback of the signed-in user
+        const snapshot = await db.collection("feedback").where("userId", "==", userId).orderBy("timestamp", "desc").get();
+        
+        let userFeedback = [];
+        snapshot.forEach((doc) => {
+            userFeedback.push({ id: doc.id, ...doc.data() });
+        });
+
+        return res.status(200).json({ feedback: userFeedback });
+    } catch (error) {
+        console.error("Error retrieving user feedback:", error);
+        return res.status(500).json({ error: "Internal server error." });
+    }
+});
+
 
 
 //Start Server
