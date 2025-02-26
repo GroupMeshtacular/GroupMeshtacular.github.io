@@ -7,6 +7,8 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
+import { createUserWithEmailAndPassword } from "firebase/auth";
+
 const {onRequest} = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 
@@ -32,6 +34,27 @@ async function loadUserFeedback(userId) {
         console.error("Error fetching feedback:", error);
     }
 }
+
+const auth = getAuth();
+
+async function registerUser() {
+    const email = document.getElementById("register-email").value;
+    const password = document.getElementById("register-password").value;
+    
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        console.log("✅ User registered:", user.uid);
+
+        alert("Registration successful! Please log in.");
+    } catch (error) {
+        console.error("❌ Registration failed:", error.message);
+        alert(error.message);
+    }
+}
+
+// Event listener for register button
+document.getElementById("register-btn").addEventListener("click", registerUser);
 
 // Call this function after login
 // Example: loadUserFeedback("KdjxHqEzaFWcnW7cw5ArXmpRV7S2");
