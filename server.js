@@ -66,9 +66,13 @@ const firebaseConfig = {
     appId: process.env.FIREBASE_APP_ID
 };
 
+const serviceAccount = JSON.parse(
+    process.env.FIREBASE_ADMIN_SDK.replace(/\\n/g, "\n") // Fix newline formatting
+);
+
 // Firebase Admin Setup
 admin.initializeApp({
-    credential: admin.credential.cert(firebaseConfig),
+    credential: admin.credential.cert(serviceAccount),
 });
 const db = admin.firestore();
 
