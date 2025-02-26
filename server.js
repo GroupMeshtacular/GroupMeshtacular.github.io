@@ -26,19 +26,29 @@ const limiter = rateLimit({
 //Apply rate limiter to all requests
 app.use(limiter);
 
-//Secure Cookies & CSRF Protection
+// Configure CORS to Allow Cookies (Must Be Before CSRF Middleware)
+const cors = require("cors");
+app.use(cors({
+    origin: "https://group-meshtacular.web.app/", 
+    credentials: true,  // Required to allow cookies in requests
+}));
+
+// Secure Cookies & CSRF Protection
 app.use(cookieParser());
 app.use(csrf({ cookie: true }));
 
-//CSRF Token Endpoint
+
+// CSRF Token Endpoint - Ensures Proper Headers
 app.get("/csrf-token", (req, res) => {
+    res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");  // Adjust this
+    res.setHeader("Access-Control-Allow-Credentials", "true");
     res.json({ csrfToken: req.csrfToken() });
 });
 
-//Error Handling for CSRF
+// CSRF Error Handling Middleware
 app.use((err, req, res, next) => {
-    if (err.code === 'EBADCSRFTOKEN') {
-        return res.status(403).send("CSRF Token Invalid");
+    if (err.code === "EBADCSRFTOKEN") {
+        return res.status(403).json({ error: "CSRF Token Invalid. Please refresh and try again." });
     }
     next(err);
 });
@@ -46,13 +56,63 @@ app.use((err, req, res, next) => {
 const functions = require("firebase-functions");
 
 const firebaseConfig = {
-    apiKey: functions.config().config.firebase_api_key,
-    authDomain: functions.config().config.firebase_auth_domain,
-    projectId: functions.config().config.firebase_project_id,
-    storageBucket: functions.config().config.firebase_storage_bucket,
-    messagingSenderId: functions.config().config.firebase_messaging_sender_id,
-    appId: functions.config().config.firebase_app_id
+    apiKey: process.env.FIREBASE_API_KEY,
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.FIREBASE_APP_ID
 };
+
+// Assign Admin Role to a User (Run Once)
+app.post("/set-admin", async (req, res) => {
+    const { userId } = req.body; // Get the user ID from request body
+
+    if (!userId) {
+        return res.status(400).json({ error: "User ID is required." });
+    }
+
+    try {
+        await admin.auth().setCustomUserClaims(userId, { admin: true });
+        return res.status(200).json({ message: `User ${userId} is now an admin!` });
+    } catch (error) {
+        console.error("Error setting admin role:", error);
+        return res.status(500).json({ error: "Failed to set admin role." });
+    }
+});
+
+
+// Secure Route: Get All Feedback (Only for Firebase Admin Users)
+app.get("/admin-feedback", async (req, res) => {
+    const { userId } = req.query; // Get the requesting user's ID
+
+    if (!userId) {
+        return res.status(400).json({ error: "User ID is required for authentication." });
+    }
+
+    try {
+        // Get the user from Firebase Authentication
+        const userRecord = await admin.auth().getUser(userId);
+
+        // Check if the user has admin privileges
+        if (!userRecord.customClaims || !userRecord.customClaims.admin) {
+            return res.status(403).json({ error: "Unauthorized access." });
+        }
+
+        // Retrieve all feedback from Firestore
+        const snapshot = await db.collection("feedback").orderBy("timestamp", "desc").get();
+        let allFeedback = [];
+        snapshot.forEach((doc) => {
+            allFeedback.push({ id: doc.id, ...doc.data() });
+        });
+
+        return res.status(200).json({ feedback: allFeedback });
+    } catch (error) {
+        console.error("Error retrieving all feedback:", error);
+        return res.status(500).json({ error: "Internal server error." });
+    }
+});
+
 
 //Start Server
 const PORT = process.env.PORT || 3000;

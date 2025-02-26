@@ -129,6 +129,15 @@ Spring Semester 2025-->
         const feedbackForm = document.getElementById("feedback-form");
         const feedbackMessages = document.getElementById("feedback-messages");
 
+
+        async function getCsrfToken() {
+            const response = await fetch("http://localhost:3000/csrf-token", {
+                credentials: "include",
+            });
+            const data = await response.json();
+            return data.csrfToken;
+        }        
+
         // Submit Feedback to Firestore (Only for Logged-In Users)
         feedbackForm.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -180,9 +189,7 @@ Spring Semester 2025-->
                 feedbackMessages.innerHTML = "<p>⚠️ Please log in to view your feedback.</p>";
             }
         });
-    </script>
 
-    <script>
         // Fetch CSRF token from server and insert it into the form
         fetch('/csrf-token')
             .then(response => response.json())
