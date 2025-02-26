@@ -3,6 +3,7 @@ const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const csrf = require('csurf');
 const path = require('path');
+const admin = require('firebase-admin')
 require('dotenv').config();
 
 
@@ -14,6 +15,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 //Middleware for Parsing Requests
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// CSRF Protection
+const csrfProtection = csrf({ cookie: true });
+app.use(csrfProtection);
 
 //Define rate limiter configuration to prevent Brute-Force Attacks
 const limiter = rateLimit({
@@ -32,10 +38,6 @@ app.use(cors({
     origin: "https://group-meshtacular.web.app/", 
     credentials: true,  // Required to allow cookies in requests
 }));
-
-// Secure Cookies & CSRF Protection
-app.use(cookieParser());
-app.use(csrf({ cookie: true }));
 
 
 // CSRF Token Endpoint - Ensures Proper Headers
@@ -63,6 +65,12 @@ const firebaseConfig = {
     messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
     appId: process.env.FIREBASE_APP_ID
 };
+
+// Firebase Admin Setup
+admin.initializeApp({
+    credential: admin.credential.cert(firebaseConfig),
+});
+const db = admin.firestore();
 
 // Assign Admin Role to a User (Run Once)
 app.post("/set-admin", async (req, res) => {
