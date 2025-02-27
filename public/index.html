@@ -235,24 +235,14 @@ Spring Semester 2025-->
                 alert("✅ Feedback submitted successfully!");
                 feedbackForm.reset();
                 
-                // Immediate display of the new feedback without waiting for the listener
-                const sanitizedFeedback = DOMPurify.sanitize(feedbackText);
-                const dateDisplay = timestamp.toLocaleString();
-                
-                // Add at the beginning of the feedback list
-                const newFeedbackItem = document.createElement('div');
-                newFeedbackItem.className = 'feedback-item';
-                newFeedbackItem.innerHTML = `
-                    <p class="feedback-text">${sanitizedFeedback}</p>
-                    <p class="feedback-date">${dateDisplay}</p>
-                `;
-                
-                // If there was a "no feedback" message, remove it first
-                if (feedbackMessages.innerHTML.includes("No feedback submitted yet")) {
-                    feedbackMessages.innerHTML = "";
-                }
-                
-                feedbackMessages.insertBefore(newFeedbackItem, feedbackMessages.firstChild);
+                // REMOVE THIS SECTION - Don't manually add to DOM
+                // Let the listener handle the display
+                // ----------------------------------------
+                // const sanitizedFeedback = DOMPurify.sanitize(feedbackText);
+                // const dateDisplay = timestamp.toLocaleString();
+                // const newFeedbackItem = document.createElement('div');
+                // ...
+                // ----------------------------------------
             })
             .catch((error) => {
                 console.error("Feedback submission error:", error);
@@ -327,11 +317,11 @@ Spring Semester 2025-->
                 // Log to verify collection access
                 console.log("Accessing feedback collection");
                 
-                // Create query for user's feedback - notice we're removing orderBy for now
-                // This is because it can cause errors if you don't have the right indexes set up
+                // Create query for user's feedback - add orderBy for consistency
                 const q = query(
                     feedbackCollection, 
-                    where("userId", "==", userId)
+                    where("userId", "==", userId),
+                    orderBy("timestamp", "desc") // Sort by timestamp, newest first
                 );
                 
                 console.log("Query created, setting up real-time listener");
@@ -339,28 +329,31 @@ Spring Semester 2025-->
                 // Listen for real-time updates
                 onSnapshot(q, (snapshot) => {
                     console.log("Feedback snapshot received, documents count:", snapshot.size);
+                    
+                    // Clear existing feedback display
                     feedbackMessages.innerHTML = "";
                     
                     if (snapshot.empty) {
                         console.log("No feedback found for this user");
                         feedbackMessages.innerHTML = "<p>No feedback submitted yet. Try adding some!</p>";
                     } else {
+                        // Create a local array to store the feedback items
+                        const feedbackItems = [];
+                        
+                        // Process each feedback document
                         snapshot.forEach((doc) => {
                             const data = doc.data();
                             console.log("Feedback document:", doc.id, data);
                             
-                            // Check for either feedback or message field
+                            // Get feedback content and format date
                             const feedbackContent = data.feedback || data.message || "No content";
-                            
-                            // Handle different timestamp formats
                             let dateDisplay = "Unknown date";
+                            
                             if (data.timestamp) {
                                 try {
-                                    // Try to handle Firestore timestamp objects
                                     if (typeof data.timestamp.toDate === 'function') {
                                         dateDisplay = data.timestamp.toDate().toLocaleString();
                                     } else {
-                                        // Handle regular Date objects or timestamps
                                         dateDisplay = new Date(data.timestamp).toLocaleString();
                                     }
                                 } catch (err) {
@@ -368,14 +361,22 @@ Spring Semester 2025-->
                                 }
                             }
                             
-                            // Sanitize feedback using DOMPurify
-                            const sanitizedFeedback = DOMPurify.sanitize(feedbackContent);
+                            // Add to our array
+                            feedbackItems.push({
+                                id: doc.id,
+                                content: feedbackContent,
+                                date: dateDisplay
+                            });
+                        });
+                        
+                        // Render the feedback items
+                        feedbackItems.forEach(item => {
+                            const sanitizedFeedback = DOMPurify.sanitize(item.content);
                             
-                            // Add the feedback item to the display
                             feedbackMessages.innerHTML += `
-                                <div class="feedback-item">
+                                <div class="feedback-item" data-id="${item.id}">
                                     <p class="feedback-text">${sanitizedFeedback}</p>
-                                    <p class="feedback-date">${dateDisplay}</p>
+                                    <p class="feedback-date">${item.date}</p>
                                 </div>
                             `;
                         });
