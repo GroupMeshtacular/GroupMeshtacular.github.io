@@ -16,6 +16,8 @@ firebase-debug.log
 firebase-debug.*.log
 .firebase/
 firebase-adminsdk.json
+firebase-config.js
+firebase-init.js
 
 # Node modules
 node_modules/

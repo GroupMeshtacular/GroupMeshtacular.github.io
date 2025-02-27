@@ -1,7 +1,6 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
-const csrf = require('csurf');
 const path = require('path');
 const cors = require("cors");
 require('dotenv').config();
@@ -17,7 +16,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Configure CORS (BEFORE CSRF)
+// Configure CORS
 app.use(cors({
     origin: [
         "http://localhost:3000",
@@ -27,10 +26,6 @@ app.use(cors({
     methods: ["GET", "POST"],
     credentials: true
 }));
-
-// CSRF Protection
-const csrfProtection = csrf({ cookie: true });
-app.use(csrfProtection);
 
 // Rate Limiter
 const limiter = rateLimit({
@@ -75,11 +70,6 @@ try {
 
 // Get Firestore Database
 const db = admin ? admin.firestore() : null;
-
-// CSRF Token Endpoint
-app.get("/csrf-token", (req, res) => {
-    res.json({ csrfToken: req.csrfToken() });
-});
 
 // Register User Endpoint
 app.post("/api/register", async (req, res) => {
@@ -172,16 +162,6 @@ app.get("/api/user-feedback", async (req, res) => {
         console.error("❌ Error retrieving user feedback:", error);
         return res.status(500).json({ error: error.message });
     }
-});
-
-// CSRF Error Handling Middleware
-app.use((err, req, res, next) => {
-    if (err.code === "EBADCSRFTOKEN") {
-        return res.status(403).json({ 
-            error: "CSRF Token Invalid. Please refresh and try again." 
-        });
-    }
-    next(err);
 });
 
 // Start Server

@@ -26,21 +26,19 @@ Spring Semester 2025-->
         <div class="auth-container">
             <div class="auth-form">
                 <h2>Sign Up</h2>
-                <form id="signup-form">
-                    <input type="hidden" id="signup-csrf" name="_csrf">
+                <form id="signup-form" onsubmit="event.preventDefault(); handleSignup();">
                     <input type="email" id="signup-email" placeholder="Email" required>
                     <input type="password" id="signup-password" placeholder="Password" required>
-                    <button type="submit">Sign Up</button>
+                    <button type="button" onclick="handleSignup()">Sign Up</button>
                 </form>
             </div>
             
             <div class="auth-form">
                 <h2>Login</h2>
-                <form id="login-form">
-                    <input type="hidden" id="login-csrf" name="_csrf">
+                <form id="login-form" onsubmit="event.preventDefault(); handleLogin();">
                     <input type="email" id="login-email" placeholder="Email" required>
                     <input type="password" id="login-password" placeholder="Password" required>
-                    <button type="submit">Login</button>
+                    <button type="button" onclick="handleLogin()">Login</button>
                 </form>
             </div>
         </div>
@@ -53,11 +51,10 @@ Spring Semester 2025-->
         <!-- Feedback Form -->
         <div class="feedback-container">
             <h3>Submit Feedback</h3>
-            <form id="feedback-form">
-                <input type="hidden" id="feedback-csrf" name="_csrf">
+            <form id="feedback-form" onsubmit="event.preventDefault(); handleFeedbackSubmit();">
                 <label for="feedback">Your Feedback:</label>
                 <textarea id="feedback" name="feedback" required></textarea>
-                <button type="submit">Submit Feedback</button>
+                <button type="button" onclick="handleFeedbackSubmit()">Submit Feedback</button>
             </form>
         </div>
         
@@ -72,9 +69,18 @@ Spring Semester 2025-->
 
     <!-- Handle Firebase Authentication -->
     <script type="module">
+        // Import necessary Firebase modules
         import { getFirebase } from './firebase-init.js';
+        import { auth, db } from './firebase-init.js';
         import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { collection, addDoc, query, orderBy, where, onSnapshot, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Clean up URL if it contains the _csrf parameter
+        if (window.location.search.includes('_csrf=')) {
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+            console.log("URL cleaned from CSRF parameter");
+        }
 
         // DOM Elements
         const authSection = document.getElementById("auth-section");
@@ -86,49 +92,49 @@ Spring Semester 2025-->
         const feedbackMessages = document.getElementById("feedback-messages");
         const logoutButton = document.getElementById("logout");
 
-        // Wait for Firebase to initialize before setting up event handlers
-        document.addEventListener('firebaseInitialized', setupAuthHandlers);
+        // Global variables for Firebase services
+        let globalAuth, globalDb;
 
-        function setupAuthHandlers() {
-            const { auth, db } = getFirebase();
+        // Define handler functions for button clicks
+        window.handleSignup = function() {
+            const email = document.getElementById("signup-email").value;
+            const password = document.getElementById("signup-password").value;
             
-            if (!auth || !db) {
-                console.error("Firebase auth or db not initialized");
+            if (!email || !password) {
+                alert("⚠️ Email and password are required");
                 return;
             }
-
-            // User Registration Handler
-            signupForm.addEventListener("submit", async (e) => {
-                e.preventDefault();
-                const email = document.getElementById("signup-email").value;
-                const password = document.getElementById("signup-password").value;
-                
-                try {
-                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            
+            createUserWithEmailAndPassword(globalAuth, email, password)
+                .then(async (userCredential) => {
                     const user = userCredential.user;
                     
                     // Save user to Firestore
-                    await setDoc(doc(db, "users", user.uid), { 
+                    await setDoc(doc(globalDb, "users", user.uid), { 
                         email: user.email,
                         createdAt: new Date()
                     });
                     
                     alert("✅ Signup Successful! You can now log in.");
                     signupForm.reset();
-                } catch (error) {
+                })
+                .catch((error) => {
                     console.error("Signup error:", error);
                     alert("⚠️ " + error.message);
-                }
-            });
+                });
+        };
 
-            // User Login Handler
-            loginForm.addEventListener("submit", async (e) => {
-                e.preventDefault();
-                const email = document.getElementById("login-email").value;
-                const password = document.getElementById("login-password").value;
-                
-                try {
-                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        window.handleLogin = function() {
+            const email = document.getElementById("login-email").value;
+            const password = document.getElementById("login-password").value;
+            
+            if (!email || !password) {
+                alert("⚠️ Email and password are required");
+                return;
+            }
+            
+            signInWithEmailAndPassword(globalAuth, email, password)
+                .then((userCredential) => {
                     const user = userCredential.user;
                     userEmailSpan.textContent = user.email;
                     
@@ -138,71 +144,83 @@ Spring Semester 2025-->
                     
                     // Load user's feedback
                     loadUserFeedback(user.uid);
-                } catch (error) {
+                })
+                .catch((error) => {
                     console.error("Login error:", error);
                     alert("⚠️ " + error.message);
-                }
-            });
-
-            // Submit Feedback Handler
-            feedbackForm.addEventListener("submit", async (e) => {
-                e.preventDefault();
-                const feedbackText = document.getElementById("feedback").value;
-                const user = auth.currentUser;
-                
-                if (user) {
-                    try {
-                        await addDoc(collection(db, "feedback"), {
-                            userId: user.uid,
-                            email: user.email,
-                            feedback: feedbackText,
-                            timestamp: new Date()
-                        });
-                        
-                        alert("✅ Feedback submitted successfully!");
-                        feedbackForm.reset();
-                        
-                        // Reload feedback
-                        loadUserFeedback(user.uid);
-                    } catch (error) {
-                        console.error("Feedback submission error:", error);
-                        alert("⚠️ " + error.message);
-                    }
-                } else {
-                    alert("⚠️ You must be logged in to submit feedback.");
-                }
-            });
-
-            // Load User Feedback from Firestore
-            function loadUserFeedback(userId) {
-                const q = query(
-                    collection(db, "feedback"), 
-                    where("userId", "==", userId), 
-                    orderBy("timestamp", "desc")
-                );
-                
-                onSnapshot(q, (snapshot) => {
-                    feedbackMessages.innerHTML = "";
-                    
-                    if (snapshot.empty) {
-                        feedbackMessages.innerHTML = "<p>No feedback submitted yet.</p>";
-                    } else {
-                        snapshot.forEach((doc) => {
-                            const data = doc.data();
-                            const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : "Unknown date";
-                            
-                            // Sanitize feedback using DOMPurify
-                            const sanitizedFeedback = DOMPurify.sanitize(data.feedback);
-                            
-                            feedbackMessages.innerHTML += `
-                                <div class="feedback-item">
-                                    <p class="feedback-text">${sanitizedFeedback}</p>
-                                    <p class="feedback-date">${date}</p>
-                                </div>
-                            `;
-                        });
-                    }
                 });
+        };
+
+        window.handleFeedbackSubmit = function() {
+            const feedbackText = document.getElementById("feedback").value;
+            const user = globalAuth.currentUser;
+            
+            if (!user) {
+                alert("⚠️ You must be logged in to submit feedback.");
+                return;
+            }
+            
+            if (!feedbackText.trim()) {
+                alert("⚠️ Please enter some feedback before submitting.");
+                return;
+            }
+            
+            console.log("Submitting feedback for user:", user.uid);
+            
+            // Create a timestamp to use in the feedback document
+            const timestamp = new Date();
+            
+            // Add the feedback document to Firestore
+            addDoc(collection(globalDb, "feedback"), {
+                userId: user.uid,
+                email: user.email,
+                feedback: feedbackText,
+                timestamp: timestamp
+            })
+            .then((docRef) => {
+                console.log("Feedback submitted with ID:", docRef.id);
+                
+                alert("✅ Feedback submitted successfully!");
+                feedbackForm.reset();
+                
+                // Immediate display of the new feedback without waiting for the listener
+                const sanitizedFeedback = DOMPurify.sanitize(feedbackText);
+                const dateDisplay = timestamp.toLocaleString();
+                
+                // Add at the beginning of the feedback list
+                const newFeedbackItem = document.createElement('div');
+                newFeedbackItem.className = 'feedback-item';
+                newFeedbackItem.innerHTML = `
+                    <p class="feedback-text">${sanitizedFeedback}</p>
+                    <p class="feedback-date">${dateDisplay}</p>
+                `;
+                
+                // If there was a "no feedback" message, remove it first
+                if (feedbackMessages.innerHTML.includes("No feedback submitted yet")) {
+                    feedbackMessages.innerHTML = "";
+                }
+                
+                feedbackMessages.insertBefore(newFeedbackItem, feedbackMessages.firstChild);
+            })
+            .catch((error) => {
+                console.error("Feedback submission error:", error);
+                alert("⚠️ Error submitting feedback: " + error.message);
+            });
+        };
+
+        // Wait for Firebase to initialize before setting up event handlers
+        document.addEventListener('firebaseInitialized', setupAuthHandlers);
+
+        function setupAuthHandlers() {
+            const { auth, db } = getFirebase();
+            
+            // Store Firebase services in global variables for the handlers
+            globalAuth = auth;
+            globalDb = db;
+            
+            if (!auth || !db) {
+                console.error("Firebase auth or db not initialized");
+                return;
             }
 
             // Logout Handler
@@ -238,6 +256,86 @@ Spring Semester 2025-->
                     dashboard.style.display = "none";
                 }
             });
+        }
+
+        // Load User Feedback from Firestore with Debug Logging
+        function loadUserFeedback(userId) {
+            console.log("Loading feedback for user:", userId);
+            
+            if (!globalDb) {
+                console.error("Firestore not initialized");
+                feedbackMessages.innerHTML = "<p>Error: Database connection not available</p>";
+                return;
+            }
+            
+            try {
+                // Try to get a reference to the feedback collection
+                const feedbackCollection = collection(globalDb, "feedback");
+                
+                // Log to verify collection access
+                console.log("Accessing feedback collection");
+                
+                // Create query for user's feedback - notice we're removing orderBy for now
+                // This is because it can cause errors if you don't have the right indexes set up
+                const q = query(
+                    feedbackCollection, 
+                    where("userId", "==", userId)
+                );
+                
+                console.log("Query created, setting up real-time listener");
+                
+                // Listen for real-time updates
+                onSnapshot(q, (snapshot) => {
+                    console.log("Feedback snapshot received, documents count:", snapshot.size);
+                    feedbackMessages.innerHTML = "";
+                    
+                    if (snapshot.empty) {
+                        console.log("No feedback found for this user");
+                        feedbackMessages.innerHTML = "<p>No feedback submitted yet. Try adding some!</p>";
+                    } else {
+                        snapshot.forEach((doc) => {
+                            const data = doc.data();
+                            console.log("Feedback document:", doc.id, data);
+                            
+                            // Check for either feedback or message field
+                            const feedbackContent = data.feedback || data.message || "No content";
+                            
+                            // Handle different timestamp formats
+                            let dateDisplay = "Unknown date";
+                            if (data.timestamp) {
+                                try {
+                                    // Try to handle Firestore timestamp objects
+                                    if (typeof data.timestamp.toDate === 'function') {
+                                        dateDisplay = data.timestamp.toDate().toLocaleString();
+                                    } else {
+                                        // Handle regular Date objects or timestamps
+                                        dateDisplay = new Date(data.timestamp).toLocaleString();
+                                    }
+                                } catch (err) {
+                                    console.error("Error formatting date:", err);
+                                }
+                            }
+                            
+                            // Sanitize feedback using DOMPurify
+                            const sanitizedFeedback = DOMPurify.sanitize(feedbackContent);
+                            
+                            // Add the feedback item to the display
+                            feedbackMessages.innerHTML += `
+                                <div class="feedback-item">
+                                    <p class="feedback-text">${sanitizedFeedback}</p>
+                                    <p class="feedback-date">${dateDisplay}</p>
+                                </div>
+                            `;
+                        });
+                    }
+                }, error => {
+                    console.error("Error loading feedback:", error);
+                    feedbackMessages.innerHTML = `<p class="error">Error loading feedback: ${error.message}</p>`;
+                });
+            } catch (error) {
+                console.error("Error setting up feedback listener:", error);
+                feedbackMessages.innerHTML = `<p class="error">Error setting up feedback listener: ${error.message}</p>`;
+            }
         }
 
         // Try to initialize immediately as well (in case the event already fired)

@@ -1,5 +1,22 @@
 const admin = require("firebase-admin");
 const functions = require("firebase-functions");
+const cors = require("cors")({ origin: true });
+const crypto = require("crypto");
+
+// Generate a CSRF token
+exports.getCsrfToken = functions.https.onRequest((req, res) => {
+  cors(req, res, () => {
+    // Generate a random token
+    const token = crypto.randomBytes(16).toString("hex");
+    
+    // Set a cookie with the token
+    res.set("Set-Cookie", `csrfToken=${token}; HttpOnly; Secure; SameSite=Strict; Path=/`);
+    
+    // Return the token in the response
+    res.status(200).json({ csrfToken: token });
+  });
+});
+
 
 // ✅ Initialize Firebase Admin SDK
 admin.initializeApp();
