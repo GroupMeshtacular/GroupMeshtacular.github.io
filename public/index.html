@@ -11,35 +11,9 @@ Spring Semester 2025-->
     <title>Group Meshtacular Project Website</title>
     <link rel="stylesheet" href="style.css">
     <!--sanitize content before display using DOMPurify-->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script> 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        // Firebase Configuration - Load from environment variables securely
-        // This will be populated at build time or runtime
-        const firebaseConfig = {
-            // These will be filled in from environment variables
-            // DO NOT hardcode sensitive information here
-        };
-
-        // Initialize Firebase only if config is available
-        let app, auth, db;
-        
-        try {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            console.log("Firebase initialized successfully");
-        } catch (error) {
-            console.error("Firebase initialization error:", error);
-        }
-
-        // Make auth and db available to other scripts
-        window.firebaseAuth = auth;
-        window.firebaseDb = db;
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
+    <!-- Import Firebase initialization script -->
+    <script type="module" src="firebase-init.js"></script>
 </head>
 <body>
     <header>
@@ -96,14 +70,11 @@ Spring Semester 2025-->
         <button id="logout">Logout</button>
     </section>
 
-    <!-- Firebase Authentication & Feedback Handling -->
+    <!-- Handle Firebase Authentication -->
     <script type="module">
-        import { getFirestore, collection, addDoc, query, orderBy, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-
-        // Get references to the auth and db from the global scope
-        const auth = window.firebaseAuth;
-        const db = window.firebaseDb;
+        import { getFirebase } from './firebase-init.js';
+        import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { collection, addDoc, query, orderBy, where, onSnapshot, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // DOM Elements
         const authSection = document.getElementById("auth-section");
@@ -115,174 +86,162 @@ Spring Semester 2025-->
         const feedbackMessages = document.getElementById("feedback-messages");
         const logoutButton = document.getElementById("logout");
 
-        // Fetch CSRF token and apply to all forms
-        async function fetchCsrfToken() {
-            try {
-                const response = await fetch("/csrf-token", {
-                    credentials: "include",
-                });
-                const data = await response.json();
-                
-                // Apply CSRF token to all forms
-                document.getElementById("signup-csrf").value = data.csrfToken;
-                document.getElementById("login-csrf").value = data.csrfToken;
-                document.getElementById("feedback-csrf").value = data.csrfToken;
-                
-                return data.csrfToken;
-            } catch (error) {
-                console.error("Error fetching CSRF token:", error);
-            }
-        }
+        // Wait for Firebase to initialize before setting up event handlers
+        document.addEventListener('firebaseInitialized', setupAuthHandlers);
 
-        // Initialize CSRF token
-        fetchCsrfToken();
-
-        // User Registration Handler
-        signupForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const email = document.getElementById("signup-email").value;
-            const password = document.getElementById("signup-password").value;
+        function setupAuthHandlers() {
+            const { auth, db } = getFirebase();
             
-            try {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
-                
-                // Save user to Firestore
-                await setDoc(doc(db, "users", user.uid), { 
-                    email: user.email,
-                    createdAt: new Date()
-                });
-                
-                alert("✅ Signup Successful! You can now log in.");
-                signupForm.reset();
-            } catch (error) {
-                console.error("Signup error:", error);
-                alert("⚠️ " + error.message);
-            }
-        });
-
-        // User Login Handler
-        loginForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const email = document.getElementById("login-email").value;
-            const password = document.getElementById("login-password").value;
-            
-            try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
-                userEmailSpan.textContent = user.email;
-                
-                // Show dashboard, hide auth section
-                authSection.style.display = "none";
-                dashboard.style.display = "block";
-                
-                // Load user's feedback
-                loadUserFeedback(user.uid);
-            } catch (error) {
-                console.error("Login error:", error);
-                alert("⚠️ " + error.message);
-            }
-        });
-
-        // Submit Feedback Handler
-        feedbackForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const feedbackText = document.getElementById("feedback").value;
-            const user = auth.currentUser;
-            
-            if (user) {
-                try {
-                    await addDoc(collection(db, "feedback"), {
-                        userId: user.uid,
-                        email: user.email,
-                        feedback: feedbackText,
-                        timestamp: new Date()
-                    });
-                    
-                    alert("✅ Feedback submitted successfully!");
-                    feedbackForm.reset();
-                    
-                    // Reload feedback
-                    loadUserFeedback(user.uid);
-                } catch (error) {
-                    console.error("Feedback submission error:", error);
-                    alert("⚠️ " + error.message);
-                }
-            } else {
-                alert("⚠️ You must be logged in to submit feedback.");
-            }
-        });
-
-        // Load User Feedback from Firestore
-        function loadUserFeedback(userId) {
-            if (!db) {
-                console.error("Firestore not initialized");
+            if (!auth || !db) {
+                console.error("Firebase auth or db not initialized");
                 return;
             }
-            
-            const q = query(
-                collection(db, "feedback"), 
-                where("userId", "==", userId), 
-                orderBy("timestamp", "desc")
-            );
-            
-            onSnapshot(q, (snapshot) => {
-                feedbackMessages.innerHTML = "";
+
+            // User Registration Handler
+            signupForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const email = document.getElementById("signup-email").value;
+                const password = document.getElementById("signup-password").value;
                 
-                if (snapshot.empty) {
-                    feedbackMessages.innerHTML = "<p>No feedback submitted yet.</p>";
-                } else {
-                    snapshot.forEach((doc) => {
-                        const data = doc.data();
-                        const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : "Unknown date";
-                        
-                        // Sanitize feedback using DOMPurify
-                        const sanitizedFeedback = DOMPurify.sanitize(data.feedback);
-                        
-                        feedbackMessages.innerHTML += `
-                            <div class="feedback-item">
-                                <p class="feedback-text">${sanitizedFeedback}</p>
-                                <p class="feedback-date">${date}</p>
-                            </div>
-                        `;
+                try {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    const user = userCredential.user;
+                    
+                    // Save user to Firestore
+                    await setDoc(doc(db, "users", user.uid), { 
+                        email: user.email,
+                        createdAt: new Date()
                     });
+                    
+                    alert("✅ Signup Successful! You can now log in.");
+                    signupForm.reset();
+                } catch (error) {
+                    console.error("Signup error:", error);
+                    alert("⚠️ " + error.message);
+                }
+            });
+
+            // User Login Handler
+            loginForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const email = document.getElementById("login-email").value;
+                const password = document.getElementById("login-password").value;
+                
+                try {
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                    const user = userCredential.user;
+                    userEmailSpan.textContent = user.email;
+                    
+                    // Show dashboard, hide auth section
+                    authSection.style.display = "none";
+                    dashboard.style.display = "block";
+                    
+                    // Load user's feedback
+                    loadUserFeedback(user.uid);
+                } catch (error) {
+                    console.error("Login error:", error);
+                    alert("⚠️ " + error.message);
+                }
+            });
+
+            // Submit Feedback Handler
+            feedbackForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const feedbackText = document.getElementById("feedback").value;
+                const user = auth.currentUser;
+                
+                if (user) {
+                    try {
+                        await addDoc(collection(db, "feedback"), {
+                            userId: user.uid,
+                            email: user.email,
+                            feedback: feedbackText,
+                            timestamp: new Date()
+                        });
+                        
+                        alert("✅ Feedback submitted successfully!");
+                        feedbackForm.reset();
+                        
+                        // Reload feedback
+                        loadUserFeedback(user.uid);
+                    } catch (error) {
+                        console.error("Feedback submission error:", error);
+                        alert("⚠️ " + error.message);
+                    }
+                } else {
+                    alert("⚠️ You must be logged in to submit feedback.");
+                }
+            });
+
+            // Load User Feedback from Firestore
+            function loadUserFeedback(userId) {
+                const q = query(
+                    collection(db, "feedback"), 
+                    where("userId", "==", userId), 
+                    orderBy("timestamp", "desc")
+                );
+                
+                onSnapshot(q, (snapshot) => {
+                    feedbackMessages.innerHTML = "";
+                    
+                    if (snapshot.empty) {
+                        feedbackMessages.innerHTML = "<p>No feedback submitted yet.</p>";
+                    } else {
+                        snapshot.forEach((doc) => {
+                            const data = doc.data();
+                            const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : "Unknown date";
+                            
+                            // Sanitize feedback using DOMPurify
+                            const sanitizedFeedback = DOMPurify.sanitize(data.feedback);
+                            
+                            feedbackMessages.innerHTML += `
+                                <div class="feedback-item">
+                                    <p class="feedback-text">${sanitizedFeedback}</p>
+                                    <p class="feedback-date">${date}</p>
+                                </div>
+                            `;
+                        });
+                    }
+                });
+            }
+
+            // Logout Handler
+            logoutButton.addEventListener("click", async () => {
+                try {
+                    await signOut(auth);
+                    
+                    // Show auth section, hide dashboard
+                    authSection.style.display = "block";
+                    dashboard.style.display = "none";
+                    
+                    // Clear feedback messages
+                    feedbackMessages.innerHTML = "";
+                    
+                    alert("✅ Logged out successfully!");
+                } catch (error) {
+                    console.error("Logout error:", error);
+                    alert("⚠️ " + error.message);
+                }
+            });
+
+            // Auth State Change Listener
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    // User is signed in
+                    userEmailSpan.textContent = user.email;
+                    authSection.style.display = "none";
+                    dashboard.style.display = "block";
+                    loadUserFeedback(user.uid);
+                } else {
+                    // User is signed out
+                    authSection.style.display = "block";
+                    dashboard.style.display = "none";
                 }
             });
         }
 
-        // Logout Handler
-        logoutButton.addEventListener("click", async () => {
-            try {
-                await signOut(auth);
-                
-                // Show auth section, hide dashboard
-                authSection.style.display = "block";
-                dashboard.style.display = "none";
-                
-                // Clear feedback messages
-                feedbackMessages.innerHTML = "";
-                
-                alert("✅ Logged out successfully!");
-            } catch (error) {
-                console.error("Logout error:", error);
-                alert("⚠️ " + error.message);
-            }
-        });
-
-        // Auth State Change Listener
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                // User is signed in
-                userEmailSpan.textContent = user.email;
-                authSection.style.display = "none";
-                dashboard.style.display = "block";
-                loadUserFeedback(user.uid);
-            } else {
-                // User is signed out
-                authSection.style.display = "block";
-                dashboard.style.display = "none";
-            }
-        });
+        // Try to initialize immediately as well (in case the event already fired)
+        setupAuthHandlers();
     </script>
 
     <section class="intro">
