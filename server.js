@@ -3,197 +3,189 @@ const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const csrf = require('csurf');
 const path = require('path');
+const cors = require("cors");
 require('dotenv').config();
-console.log("FIREBASE_ADMIN_SDK:", process.env.FIREBASE_ADMIN_SDK);
 
-// 🚨 Check if FIREBASE_ADMIN_SDK is loaded properly
-if (!process.env.FIREBASE_ADMIN_SDK || process.env.FIREBASE_ADMIN_SDK.trim().length < 50) {
-    throw new Error("❌ FIREBASE_ADMIN_SDK is missing or incorrectly formatted. Check .env file.");
-}
-
-// ✅ Parse the Firebase Admin SDK JSON
-let serviceAccount;
-try {
-    // ✅ Ensure we properly unescape \n in the private_key field
-    const fixedJson = process.env.FIREBASE_ADMIN_SDK.replace(/\\\\n/g, '\\n');
-    serviceAccount = JSON.parse(fixedJson);
-} catch (error) {
-    console.error("❌ Failed to parse FIREBASE_ADMIN_SDK JSON. Check .env formatting.", error);
-    throw error;
-}
-
+// Initialize Express App
 const app = express();
 
-//To serve the static files before applying Middleware
+// Serve Static Files First
 app.use(express.static(path.join(__dirname, 'public')));
 
-//Middleware for Parsing Requests
+// Middleware for Parsing Requests
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Configure CORS (BEFORE CSRF)
+app.use(cors({
+    origin: [
+        "http://localhost:3000",
+        "https://group-meshtacular.web.app",
+        "https://group-meshtacular.firebaseapp.com"
+    ],
+    methods: ["GET", "POST"],
+    credentials: true
+}));
 
 // CSRF Protection
 const csrfProtection = csrf({ cookie: true });
 app.use(csrfProtection);
 
-//Define rate limiter configuration to prevent Brute-Force Attacks
+// Rate Limiter
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,  //15 miniutes
-    max: 100,   //limits IP up to 100 requests per window
+    windowMs: 15 * 60 * 1000,  // 15 minutes
+    max: 100,                  // 100 requests per window
     message: 'Too many requests from this IP, please try again in 15 minutes',
-    headers: true, //include the RateLimit headers
+    standardHeaders: true,     // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false,      // Disable the `X-RateLimit-*` headers
 });
-
-//Apply rate limiter to all requests
 app.use(limiter);
 
-// Configure CORS to Allow Cookies (Must Be Before CSRF Middleware)
-const cors = require("cors");
-app.use(cors({
-    origin: "https://group-meshtacular.web.app/", 
-    credentials: true,  // Required to allow cookies in requests
-}));
+// Initialize Firebase Admin
+let admin;
+try {
+    // Check if Firebase Admin SDK Config is available
+    if (process.env.FIREBASE_ADMIN_SDK) {
+        admin = require("firebase-admin");
+        
+        // Parse the service account JSON
+        let serviceAccount;
+        try {
+            // Handle escaped newlines correctly
+            const fixedJson = process.env.FIREBASE_ADMIN_SDK.replace(/\\\\n/g, '\\n');
+            serviceAccount = JSON.parse(fixedJson);
+            
+            // Initialize Firebase Admin
+            if (admin.apps.length === 0) {
+                admin.initializeApp({
+                    credential: admin.credential.cert(serviceAccount),
+                });
+                console.log("✅ Firebase Admin SDK initialized successfully");
+            }
+        } catch (error) {
+            console.error("❌ Failed to parse FIREBASE_ADMIN_SDK:", error);
+        }
+    } else {
+        console.warn("⚠️ FIREBASE_ADMIN_SDK not found in environment variables");
+    }
+} catch (error) {
+    console.error("❌ Firebase Admin initialization failed:", error);
+}
 
+// Get Firestore Database
+const db = admin ? admin.firestore() : null;
 
-// CSRF Token Endpoint - Ensures Proper Headers
+// CSRF Token Endpoint
 app.get("/csrf-token", (req, res) => {
-    res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");  // Adjust this
-    res.setHeader("Access-Control-Allow-Credentials", "true");
     res.json({ csrfToken: req.csrfToken() });
 });
 
-// CSRF Error Handling Middleware
-app.use((err, req, res, next) => {
-    if (err.code === "EBADCSRFTOKEN") {
-        return res.status(403).json({ error: "CSRF Token Invalid. Please refresh and try again." });
+// Register User Endpoint
+app.post("/api/register", async (req, res) => {
+    if (!admin) {
+        return res.status(500).json({ error: "Firebase Admin SDK not initialized" });
     }
-    next(err);
-});
-
-/*const firebaseConfig = {
-    apiKey: process.env.FIREBASE_API_KEY,
-    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.FIREBASE_APP_ID
-}; */
-
-
-const admin = require("firebase-admin");
-
-if (admin.apps.length === 0) {
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-    });
-}
-
-const db = admin.firestore();
-
-
-// Secure Route: Get All Feedback (Only for Firebase Admin Users)
-app.get("/admin-feedback", async (req, res) => {
-    const { userId } = req.query; // Get the requesting user's ID
-
-    if (!userId) {
-        return res.status(400).json({ error: "User ID is required for authentication." });
-    }
-
-    try {
-        // Get the user from Firebase Authentication
-        const userRecord = await admin.auth().getUser(userId);
-
-        // Check if the user has admin privileges
-        if (!userRecord.customClaims || !userRecord.customClaims.admin) {
-            return res.status(403).json({ error: "Unauthorized access." });
-        }
-
-        // Retrieve all feedback from Firestore
-        const snapshot = await db.collection("feedback").orderBy("timestamp", "desc").get();
-        let allFeedback = [];
-        snapshot.forEach((doc) => {
-            allFeedback.push({ id: doc.id, ...doc.data() });
-        });
-
-        return res.status(200).json({ feedback: allFeedback });
-    } catch (error) {
-        console.error("Error retrieving all feedback:", error);
-        return res.status(500).json({ error: "Internal server error." });
-    }
-});
-
-// Route to Submit Feedback
-app.post("/submit-feedback", async (req, res) => {
-    const { userId, message } = req.body;
-
-    if (!userId || !message) {
-        return res.status(400).json({ error: "User ID and message are required." });
-    }
-
-    try {
-        // Save feedback to Firestore
-        await db.collection("feedback").add({
-            userId,
-            message,
-            timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        });
-
-        return res.status(201).json({ message: "Feedback submitted successfully!" });
-    } catch (error) {
-        console.error("Error submitting feedback:", error);
-        return res.status(500).json({ error: "Internal server error." });
-    }
-});
-
-// Secure Route: Get User's Own Feedback
-app.get("/user-feedback", async (req, res) => {
-    const { userId } = req.query; // Get the signed-in user's ID
-
-    if (!userId) {
-        return res.status(400).json({ error: "User ID is required." });
-    }
-
-    try {
-        // Retrieve only the feedback of the signed-in user
-        const snapshot = await db.collection("feedback").where("userId", "==", userId).orderBy("timestamp", "desc").get();
-        
-        let userFeedback = [];
-        snapshot.forEach((doc) => {
-            userFeedback.push({ id: doc.id, ...doc.data() });
-        });
-
-        return res.status(200).json({ feedback: userFeedback });
-    } catch (error) {
-        console.error("Error retrieving user feedback:", error);
-        return res.status(500).json({ error: "Internal server error." });
-    }
-});
-
-app.post("/register", async (req, res) => {
+    
     const { email, password } = req.body;
     
     if (!email || !password) {
-        return res.status(400).json({ error: "Email and password are required." });
+        return res.status(400).json({ error: "Email and password are required" });
     }
-
+    
     try {
         const user = await admin.auth().createUser({
             email,
             password
         });
+        
+        // Create user document in Firestore
+        await db.collection("users").doc(user.uid).set({
+            email,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        
         console.log("✅ User registered:", user.uid);
-
-        return res.status(201).json({ message: "Registration successful! Please log in.", uid: user.uid });
+        return res.status(201).json({ 
+            message: "Registration successful! Please log in.",
+            uid: user.uid 
+        });
     } catch (error) {
-        console.error("❌ Registration failed:", error.message);
+        console.error("❌ Registration failed:", error);
         return res.status(500).json({ error: error.message });
     }
 });
 
+// Submit Feedback Endpoint
+app.post("/api/submit-feedback", async (req, res) => {
+    if (!admin) {
+        return res.status(500).json({ error: "Firebase Admin SDK not initialized" });
+    }
+    
+    const { userId, message } = req.body;
+    
+    if (!userId || !message) {
+        return res.status(400).json({ error: "User ID and message are required" });
+    }
+    
+    try {
+        // Save feedback to Firestore
+        await db.collection("feedback").add({
+            userId,
+            message,
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
+        });
+        
+        return res.status(201).json({ message: "Feedback submitted successfully!" });
+    } catch (error) {
+        console.error("❌ Error submitting feedback:", error);
+        return res.status(500).json({ error: error.message });
+    }
+});
 
+// Get User's Feedback Endpoint
+app.get("/api/user-feedback", async (req, res) => {
+    if (!admin) {
+        return res.status(500).json({ error: "Firebase Admin SDK not initialized" });
+    }
+    
+    const { userId } = req.query;
+    
+    if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+    }
+    
+    try {
+        // Retrieve only feedback for the specified user
+        const snapshot = await db.collection("feedback")
+            .where("userId", "==", userId)
+            .orderBy("timestamp", "desc")
+            .get();
+        
+        let userFeedback = [];
+        snapshot.forEach((doc) => {
+            userFeedback.push({ id: doc.id, ...doc.data() });
+        });
+        
+        return res.status(200).json({ feedback: userFeedback });
+    } catch (error) {
+        console.error("❌ Error retrieving user feedback:", error);
+        return res.status(500).json({ error: error.message });
+    }
+});
 
-//Start Server
+// CSRF Error Handling Middleware
+app.use((err, req, res, next) => {
+    if (err.code === "EBADCSRFTOKEN") {
+        return res.status(403).json({ 
+            error: "CSRF Token Invalid. Please refresh and try again." 
+        });
+    }
+    next(err);
+});
+
+// Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`✅ Server is running on port ${PORT}`);
 });
