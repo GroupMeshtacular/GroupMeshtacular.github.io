@@ -14,6 +14,15 @@ Spring Semester 2025-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
     <!-- Import Firebase initialization script -->
     <script type="module" src="firebase-init.js"></script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-T0HER5K5PQ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-T0HER5K5PQ');
+    </script>
 </head>
 <body>
     <header>
@@ -75,6 +84,28 @@ Spring Semester 2025-->
         import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { collection, addDoc, query, orderBy, where, onSnapshot, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // Add extensive debug logging
+        console.log("Script loading...");
+
+        // Create error handler for unhandled promise rejections
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('Unhandled promise rejection:', event.reason);
+        });
+
+        // Setup debug logging for form submissions
+        const debugEvent = (name) => {
+            return (...args) => {
+                console.log(`Event '${name}' triggered with:`, args);
+            };
+        };
+
+        // Monitor for clicks
+        document.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                console.log("Button clicked:", e.target.textContent, e.target);
+            }
+        });
+
         // Clean up URL if it contains the _csrf parameter
         if (window.location.search.includes('_csrf=')) {
             const cleanUrl = window.location.pathname;
@@ -94,6 +125,27 @@ Spring Semester 2025-->
 
         // Global variables for Firebase services
         let globalAuth, globalDb;
+
+        // Try to get Firebase services directly
+        try {
+            globalAuth = auth;
+            globalDb = db;
+            console.log("Firebase services accessed directly:", !!globalAuth, !!globalDb);
+            
+            // If we have both services, setup immediately
+            if (globalAuth && globalDb) {
+                console.log("Firebase services available, setting up immediately");
+                setupAuthHandlers();
+            }
+        } catch (error) {
+            console.log("Couldn't get Firebase services directly, waiting for initialization event");
+        }
+
+        // Wait for Firebase to initialize (as a backup)
+        document.addEventListener('firebaseInitialized', () => {
+            console.log("Firebase initialized event received");
+            setupAuthHandlers();
+        });
 
         // Define handler functions for button clicks
         window.handleSignup = function() {
