@@ -170,26 +170,25 @@ app.get("/user-feedback", async (req, res) => {
 });
 
 app.post("/register", async (req, res) => {
-    const { email, password, displayName } = req.body;
-
+    const { email, password } = req.body;
+    
     if (!email || !password) {
         return res.status(400).json({ error: "Email and password are required." });
     }
 
     try {
-        const user = await auth.createUser({
+        const user = await admin.auth().createUser({
             email,
-            password,
-            displayName,
+            password
         });
+        console.log("✅ User registered:", user.uid);
 
-        return res.status(201).json({ message: "User registered successfully!", uid: user.uid });
+        return res.status(201).json({ message: "Registration successful! Please log in.", uid: user.uid });
     } catch (error) {
-        console.error("Error creating user:", error);
+        console.error("❌ Registration failed:", error.message);
         return res.status(500).json({ error: error.message });
     }
 });
-
 
 
 

@@ -18,14 +18,14 @@ Spring Semester 2025-->
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         //Firebase Configuration
-        const firebaseConfig = {
+        /*const firebaseConfig = {
             apiKey: process.env.FIREBASE_API_KEY,
             authDomain: process.env.FIREBASE_AUTH_DOMAIN,
             projectId: process.env.FIREBASE_PROJECT_ID,
             storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
             messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
             appId: process.env.FIREBASE_APP_ID
-        };
+        };*/
 
 
         // Initialize Firebase
@@ -79,14 +79,19 @@ Spring Semester 2025-->
         <p>📟 The Cyber HQ for Our Networking & Security Portfolio</p>
     </header>
 
-    <!-- Authentication Section -->
-    <div id="auth-section">
-        <h2>Sign Up</h2>
-        <form id="signup-form">
-            <input type="email" id="signup-email" placeholder="Email" required>
-            <input type="password" id="signup-password" placeholder="Password" required>
-            <button type="submit">Sign Up</button>
-        </form>
+    <!-- Register Section -->
+    <form id="register-form">
+        <input type="email" id="register-email" placeholder="Email">
+        <input type="password" id="register-password" placeholder="Password">
+        <button type="submit">Sign Up</button>
+    </form>
+
+    <script>
+        document.getElementById("register-form").addEventListener("submit", function(event) {
+            event.preventDefault(); // Prevents page refresh
+            registerUser(); // Calls the function from index.js
+        });
+    </script>
 
         <h2>Login</h2>
         <form id="login-form">
@@ -98,14 +103,12 @@ Spring Semester 2025-->
 
     <!-- Dashboard (Only visible after login) -->
     <div id="dashboard" style="display:none;">
-        <h2>Dashboard</h2>
-        <p>Welcome, <span id="user-email"></span>! You are now logged in.</p>
-        
-        <h3>Your Feedback</h3>
+        <h2>Welcome, <span id="user-email"></span>! You are now logged in.</h2>
+        <h3>Your Submitted Feedback</h3>
         <div id="feedback-messages"></div>
-
         <button id="logout">Logout</button>
     </div>
+
 
     <!-- Feedback Form (Users Must Be Logged In to Submit) -->
     <form id="feedback-form">
