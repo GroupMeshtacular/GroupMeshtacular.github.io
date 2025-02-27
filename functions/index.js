@@ -8,7 +8,11 @@
  */
 
 const admin = require("firebase-admin");
-const auth = admin.auth(); // Initialize Firebase Admin Authentication
+const { getAuth, createUserWithEmailAndPassword } = require("firebase/auth");
+
+// Ensure auth is only declared once
+const auth = getAuth();
+
 
 
 const {onRequest} = require("firebase-functions/v2/https");
@@ -37,7 +41,6 @@ async function loadUserFeedback(userId) {
     }
 }
 
-const auth = getAuth();
 
 async function registerUser() {
     const email = document.getElementById("register-email").value;
