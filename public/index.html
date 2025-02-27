@@ -77,7 +77,7 @@ Spring Semester 2025-->
     </section>
 
     <!-- Handle Firebase Authentication -->
-    <script type="module">
+    <script type="module" src="firebase-init.js">
         // Import necessary Firebase modules
         import { getFirebase } from './firebase-init.js';
         import { auth, db } from './firebase-init.js';
@@ -235,6 +235,25 @@ Spring Semester 2025-->
                 alert("✅ Feedback submitted successfully!");
                 feedbackForm.reset();
                 
+                // Immediate display of the new feedback without waiting for the listener
+                const sanitizedFeedback = DOMPurify.sanitize(feedbackText);
+                const dateDisplay = timestamp.toLocaleString();
+                
+                // Add at the beginning of the feedback list
+                const newFeedbackItem = document.createElement('div');
+                newFeedbackItem.className = 'feedback-item';
+                newFeedbackItem.innerHTML = `
+                    <p class="feedback-text">${sanitizedFeedback}</p>
+                    <p class="feedback-date">${dateDisplay}</p>
+                `;
+                
+                // If there was a "no feedback" message, remove it first
+                if (feedbackMessages.innerHTML.includes("No feedback submitted yet")) {
+                    feedbackMessages.innerHTML = "";
+                }
+                
+                feedbackMessages.insertBefore(newFeedbackItem, feedbackMessages.firstChild);
+            })
             .catch((error) => {
                 console.error("Feedback submission error:", error);
                 alert("⚠️ Error submitting feedback: " + error.message);
