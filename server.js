@@ -91,23 +91,6 @@ if (admin.apps.length === 0) {
 
 const db = admin.firestore();
 
-// Assign Admin Role to a User (Run Once)
-app.post("/set-admin", async (req, res) => {
-    const { userId } = req.body; // Get the user ID from request body
-
-    if (!userId) {
-        return res.status(400).json({ error: "User ID is required." });
-    }
-
-    try {
-        await admin.auth().setCustomUserClaims(userId, { admin: true });
-        return res.status(200).json({ message: `User ${userId} is now an admin!` });
-    } catch (error) {
-        console.error("Error setting admin role:", error);
-        return res.status(500).json({ error: "Failed to set admin role." });
-    }
-});
-
 
 // Secure Route: Get All Feedback (Only for Firebase Admin Users)
 app.get("/admin-feedback", async (req, res) => {
@@ -186,6 +169,28 @@ app.get("/user-feedback", async (req, res) => {
         return res.status(500).json({ error: "Internal server error." });
     }
 });
+
+app.post("/register", async (req, res) => {
+    const { email, password, displayName } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required." });
+    }
+
+    try {
+        const user = await auth.createUser({
+            email,
+            password,
+            displayName,
+        });
+
+        return res.status(201).json({ message: "User registered successfully!", uid: user.uid });
+    } catch (error) {
+        console.error("Error creating user:", error);
+        return res.status(500).json({ error: error.message });
+    }
+});
+
 
 
 

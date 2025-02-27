@@ -7,7 +7,9 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-const { createUserWithEmailAndPassword } from "firebase/auth";
+const admin = require("firebase-admin");
+const auth = admin.auth(); // Initialize Firebase Admin Authentication
+
 
 const {onRequest} = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
