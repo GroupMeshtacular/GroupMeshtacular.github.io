@@ -7,8 +7,8 @@
 .env.test
 .env.production
 firebase-config-local.json
-firebase-init.js
-**/firebase-config.js
+public/firebase-init.js
+public/firebase-config.js
 
 # Ignore configuration script
 build-firebase-config.js
