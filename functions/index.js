@@ -87,31 +87,27 @@ document.getElementById("register-btn").addEventListener("click", registerUser);
 const admin = require("firebase-admin");
 const { onRequest } = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
-const fetch = require("node-fetch");
+const axios = require("axios"); // Replaces fetch for backend requests
 
 admin.initializeApp();
 const auth = admin.auth();
 
 async function loadUserFeedback(userId) {
     try {
-        const response = await fetch(`/user-feedback?userId=${userId}`);
-        const data = await response.json();
+        // Ensure backend compatibility by using axios instead of fetch
+        const response = await axios.get(`https://your-api-url.com/user-feedback?userId=${userId}`);
+        const data = response.data;
 
         if (data.error) {
             console.error("Error loading feedback:", data.error);
             return;
         }
 
-        const feedbackList = document.getElementById("feedback-list");
-        feedbackList.innerHTML = ""; // Clear previous data
-
-        data.feedback.forEach(feedback => {
-            const listItem = document.createElement("li");
-            listItem.textContent = feedback.message;
-            feedbackList.appendChild(listItem);
-        });
+        console.log("✅ Feedback data retrieved:", data.feedback);
+        return data.feedback; // Return feedback for further processing
     } catch (error) {
-        console.error("Error fetching feedback:", error);
+        console.error("❌ Error fetching feedback:", error.message);
+        return null;
     }
 }
 
@@ -124,8 +120,8 @@ async function registerUser(req, res) {
 
     try {
         const user = await auth.createUser({
-            email: email,
-            password: password
+            email,
+            password
         });
         console.log("✅ User registered:", user.uid);
 
