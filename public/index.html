@@ -153,10 +153,6 @@ Spring Semester 2025-->
         // Define handler functions for button clicks
         // Global handler functions that can be called from HTML
         function handleSignup() {
-            // Get the Firebase auth from the global variable
-            const auth = window.firebaseAuth;
-            const db = window.firebaseDb;
-            
             const email = document.getElementById("signup-email").value;
             const password = document.getElementById("signup-password").value;
             
@@ -165,24 +161,26 @@ Spring Semester 2025-->
                 return;
             }
             
-            createUserWithEmailAndPassword(globalAuth, email, password)
-                .then(async (userCredential) => {
-                    const user = userCredential.user;
-                    
-                    // Save user to Firestore
-                    await setDoc(doc(globalDb, "users", user.uid), { 
-                        email: user.email,
-                        createdAt: new Date()
-                    });
-                    
-                    alert("✅ Signup Successful! You can now log in.");
-                    signupForm.reset();
-                })
-                .catch((error) => {
-                    console.error("Signup error:", error);
+            // Access Firebase Auth from the window object
+            const auth = window.firebaseAuth;
+            
+            if (!auth) {
+              alert("⚠️ Firebase authentication not initialized");
+              return;
+            }
+            
+            // Import the function dynamically
+            import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js")
+              .then(firebaseAuth => {
+                firebaseAuth.createUserWithEmailAndPassword(auth, email, password)
+                  .then(userCredential => {
+                    alert("✅ Signup successful!");
+                    document.getElementById("signup-form").reset();
+                  })
+                  .catch(error => {
                     alert("⚠️ " + error.message);
-                });
-        };
+                  });
+        });
 
         function handleLogin() {
             // Get the Firebase auth from the global variable
