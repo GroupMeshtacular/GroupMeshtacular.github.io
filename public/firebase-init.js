@@ -1,4 +1,4 @@
-// Modified firebase-init.js with persistence
+// UPDATED firebase-init.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -22,7 +22,6 @@ async function initializeFirebase() {
     const auth = getAuth(app);
     
     // Set persistence to LOCAL - this will maintain the session
-    // even when the page is refreshed or closed and reopened
     try {
       await setPersistence(auth, browserLocalPersistence);
       console.log("✅ Firebase auth persistence set to LOCAL");
@@ -37,6 +36,7 @@ async function initializeFirebase() {
     window.firebaseDb = db;
     
     // Signal that Firebase is ready
+    console.log("Firing firebaseInitialized event");
     document.dispatchEvent(new CustomEvent('firebaseInitialized'));
     
     return { app, auth, db };
@@ -51,18 +51,32 @@ async function initializeFirebase() {
   }
 }
 
-// initialize Firebase and then export the services
+// We'll initialize Firebase and then export the services
 let app, auth, db;
 
 // Immediately execute the initialization
-initializeFirebase().then(services => {
+const firebasePromise = initializeFirebase().then(services => {
   app = services.app;
   auth = services.auth;
   db = services.db;
+  
+  // Set up auth state listener here directly to ensure it's attached early
+  if (auth) {
+    const { onAuthStateChanged } = firebase.auth;
+    
+    onAuthStateChanged(auth, (user) => {
+      console.log("Auth state changed (from init):", user ? "User logged in" : "User logged out");
+      
+      // Dispatch custom event to notify other parts of the application
+      document.dispatchEvent(new CustomEvent('authStateChanged', { 
+        detail: { user } 
+      }));
+    });
+  }
 });
 
 // Export Firebase services
-export { app, auth, db };
+export { app, auth, db, firebasePromise };
 
 // Export getFirebase function
 export function getFirebase() {
