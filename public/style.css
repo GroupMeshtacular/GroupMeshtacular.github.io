@@ -1,5 +1,6 @@
 /* Import Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap');
 
 /* General Styles */
 body {
@@ -62,8 +63,6 @@ table {
 table, th, td {
     border: 1px solid #c9d1d9;
 }
-
-
 
 th, td {
     padding: 10px;
@@ -182,67 +181,6 @@ footer h2 {
     font-size: 20px;
 }
 
-/* Keyframe Animations */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateX(-50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-@keyframes zoomIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-@keyframes flicker {
-    0% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.5;
-    }
-    100% {
-        opacity: 1;
-    }
-}
-
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    body {
-        padding: 15px;
-    }
-
-    .security-notice {
-        width: 100%;
-        padding: 15px;
-    }
-}
-
-
-
 /* Authentication Section Styling */
 .auth-container {
     display: flex;
@@ -347,6 +285,36 @@ footer h2 {
     resize: vertical;
 }
 
+/* Styled Submit Feedback Button */
+#feedback-form button[type="submit"] {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin: 15px 0;
+    border: none;
+    border-radius: 5px;
+    background-color: #fbc901;
+    color: #161b22;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Fira Code', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#feedback-form button[type="submit"]:hover {
+    background-color: #f1c40f;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+#feedback-form button[type="submit"]:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 .feedback-display {
     margin-top: 20px;
     padding: 15px;
@@ -361,21 +329,29 @@ footer h2 {
 
 .feedback-item {
     background: rgba(20, 20, 20, 0.5);
-    padding: 10px;
-    margin-bottom: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
     border-radius: 5px;
     border-left: 3px solid #f1c40f;
+    transition: transform 0.2s ease;
+}
+
+.feedback-item:hover {
+    transform: translateX(5px);
+    background: rgba(25, 25, 25, 0.6);
 }
 
 .feedback-text {
-    margin-bottom: 5px;
+    margin-bottom: 10px;
     color: #bebebe;
+    line-height: 1.4;
 }
 
 .feedback-date {
     font-size: 12px;
     color: #888;
     text-align: right;
+    font-style: italic;
 }
 
 /* Logout Button */
@@ -390,16 +366,85 @@ footer h2 {
     color: white;
     font-weight: bold;
     cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
+    transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
     font-family: 'Fira Code', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 #logout:hover {
     background-color: #c0392b;
     transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Additional animations */
+#logout:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Loading indicator */
+.loading-indicator {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fbc901;
+    animation: spin 1s ease-in-out infinite;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Status message styling */
+.status-message {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    animation: fadeIn 0.5s ease-in;
+}
+
+.status-success {
+    background-color: rgba(46, 204, 113, 0.2);
+    border-left: 3px solid #2ecc71;
+    color: #2ecc71;
+}
+
+.status-error {
+    background-color: rgba(231, 76, 60, 0.2);
+    border-left: 3px solid #e74c3c;
+    color: #e74c3c;
+}
+
+/* Keyframe Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
 @keyframes zoomIn {
     from {
         opacity: 0;
@@ -409,4 +454,65 @@ footer h2 {
         opacity: 1;
         transform: scale(1);
     }
+}
+
+@keyframes flicker {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* Glowing effect on focus */
+#feedback:focus, 
+.auth-form input:focus {
+    outline: none;
+    box-shadow: 0 0 5px #fbc901, inset 0 0 5px rgba(251, 201, 1, 0.2);
+    border: 1px solid #fbc901;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    body {
+        padding: 15px;
+    }
+
+    .security-notice {
+        width: 100%;
+        padding: 15px;
+    }
+    
+    .auth-form {
+        max-width: 90%;
+    }
+    
+    #dashboard {
+        padding: 15px;
+    }
+    
+    #logout {
+        width: 80%;
+    }
+}
+
+/* Pulse animation for submit button */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(251, 201, 1, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(251, 201, 1, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(251, 201, 1, 0);
+    }
+}
+
+#feedback-form button[type="submit"]:focus {
+    animation: pulse 1.5s infinite;
 }
