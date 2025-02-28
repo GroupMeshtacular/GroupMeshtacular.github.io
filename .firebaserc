@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "group-meshtacular"
-  }
+  },
+  "targets": {
+    "group-meshtacular": {
+      "hosting": {
+        "group-meshtacular": [
+          "group-meshtacular"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

@@ -369,19 +369,23 @@ function loadUserFeedback(userId) {
     console.log("Loading feedback for user:", userId);
     
     if (!globalDb) {
-        console.error("Firestore not initialized");
+        console.error("Firestore not initialized", { 
+            firebaseInitialized, 
+            windowDb: !!window.firebaseDb,
+            globalAuth: !!globalAuth
+        });
+        
         if (feedbackMessages) {
-            feedbackMessages.innerHTML = "<p>Error: Database connection not available</p>";
+            feedbackMessages.innerHTML = "<p class='error'>Error: Database connection not available. Refreshing the page might help.</p>";
         }
         return;
     }
     
-    if (!feedbackMessages) {
-        feedbackMessages = document.getElementById("feedback-messages");
-        if (!feedbackMessages) {
-            console.error("Feedback messages element not found");
-            return;
-        }
+    // Check if collection() function exists
+    if (typeof collection !== 'function') {
+        console.error("Firestore collection function not available");
+        feedbackMessages.innerHTML = "<p class='error'>Error: Firestore functions not loaded correctly.</p>";
+        return;
     }
     
     try {
