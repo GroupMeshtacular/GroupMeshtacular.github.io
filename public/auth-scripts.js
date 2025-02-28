@@ -249,6 +249,60 @@ function handleLogin() {
         });
 }
 
+// Toggle loading state
+function toggleLoadingState(isLoading) {
+    const submitButton = document.getElementById("submit-feedback");
+    
+    // If we don't have the new UI elements, handle simply
+    if (!submitButton) {
+        return;
+    }
+    
+    const submitText = document.getElementById("submit-text");
+    const loadingSpinner = document.getElementById("loading-spinner");
+    
+    if (!submitText || !loadingSpinner) {
+        // Just disable the button if we can't find the other elements
+        if (submitButton) {
+            submitButton.disabled = isLoading;
+        }
+        return;
+    }
+    
+    if (isLoading) {
+        submitText.textContent = "Submitting...";
+        loadingSpinner.style.display = "inline-block";
+        submitButton.disabled = true;
+    } else {
+        submitText.textContent = "Submit Feedback";
+        loadingSpinner.style.display = "none";
+        submitButton.disabled = false;
+    }
+}
+
+// Show status message
+function showStatusMessage(type, message) {
+    const statusElement = document.getElementById("feedback-status");
+    
+    if (statusElement) {
+        statusElement.textContent = message;
+        statusElement.className = "status-message status-" + type;
+        statusElement.style.display = "block";
+    } else {
+        // Fallback to alert if status element not found
+        alert(message);
+    }
+}
+
+// Hide status message
+function hideStatusMessage() {
+    const statusElement = document.getElementById("feedback-status");
+    
+    if (statusElement) {
+        statusElement.style.display = "none";
+    }
+}
+
 // Updated handleFeedbackSubmit function to avoid duplicate displays
 function handleFeedbackSubmit() {
     if (!firebaseInitialized) {
