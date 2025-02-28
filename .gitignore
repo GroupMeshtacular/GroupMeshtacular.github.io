@@ -7,7 +7,6 @@
 .env.test
 .env.production
 firebase-config-local.json
-public/firebase-init.js
 public/firebase-config.js
 
 # Ignore configuration script
@@ -18,7 +17,6 @@ firebase-debug.log
 firebase-debug.*.log
 .firebase/
 firebase-adminsdk.json
-firebase-config.js
 
 
 # Node modules

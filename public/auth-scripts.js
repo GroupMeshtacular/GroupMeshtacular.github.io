@@ -1,9 +1,12 @@
-// auth-scripts.js - Create this as a new file
+// auth-scripts.js
 import { getFirebase } from './firebase-init.js';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { collection, addDoc, query, orderBy, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 console.log("Auth scripts loading...");
+
+// Flag to track Firebase initialization status
+let firebaseInitialized = false;
 
 // Create error handler for unhandled promise rejections
 window.addEventListener('unhandledrejection', function(event) {
@@ -39,6 +42,8 @@ let globalAuth, globalDb;
 
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOM fully loaded, initializing elements");
+    
     // Initialize DOM elements
     authSection = document.getElementById("auth-section");
     dashboard = document.getElementById("dashboard");
@@ -50,49 +55,79 @@ document.addEventListener('DOMContentLoaded', () => {
     logoutButton = document.getElementById("logout");
 
     // Add event listeners to forms
-    signupForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        handleSignup();
-    });
+    if (signupForm) {
+        signupForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            handleSignup();
+        });
+    } else {
+        console.warn("Signup form element not found");
+    }
 
-    loginForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        handleLogin();
-    });
+    if (loginForm) {
+        loginForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            handleLogin();
+        });
+    } else {
+        console.warn("Login form element not found");
+    }
+
+    if (feedbackForm) {
+        feedbackForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            handleFeedbackSubmit();
+        });
+    }
 
     // Expose handlers to global scope for onclick attributes
     window.handleSignup = handleSignup;
     window.handleLogin = handleLogin;
     window.handleFeedbackSubmit = handleFeedbackSubmit;
+    
+    // Try to initialize Firebase if it's already available
+    tryInitializeFirebase();
 });
 
 // Try to get Firebase services directly
-try {
-    const { auth, db } = getFirebase();
-    if (auth && db) {
-        globalAuth = auth;
-        globalDb = db;
-        console.log("Firebase services accessed directly:", !!globalAuth, !!globalDb);
-        
-        // If we have both services, setup immediately
-        if (globalAuth && globalDb) {
-            console.log("Firebase services available, setting up immediately");
-            setupAuthHandlers();
+function tryInitializeFirebase() {
+    try {
+        const { auth, db } = getFirebase();
+        if (auth && db) {
+            globalAuth = auth;
+            globalDb = db;
+            console.log("Firebase services accessed directly:", !!globalAuth, !!globalDb);
+            
+            // If we have both services, setup immediately
+            if (globalAuth && globalDb) {
+                console.log("Firebase services available, setting up immediately");
+                firebaseInitialized = true;
+                setupAuthHandlers();
+            }
+        } else {
+            console.log("Firebase services not available yet, waiting for initialization event");
         }
+    } catch (error) {
+        console.log("Couldn't get Firebase services directly:", error);
+        console.log("Waiting for firebaseInitialized event");
     }
-} catch (error) {
-    console.log("Couldn't get Firebase services directly, waiting for initialization event");
 }
 
 // Wait for Firebase to initialize (as a backup)
 document.addEventListener('firebaseInitialized', () => {
-    console.log("Firebase initialized event received");
+    console.log("Firebase initialized event received in auth-scripts.js");
+    firebaseInitialized = true;
     setupAuthHandlers();
 });
 
 // Define handler functions for button clicks
-// Global handler functions that can be called from HTML
 function handleSignup() {
+    if (!firebaseInitialized) {
+        console.warn("Firebase not initialized yet");
+        alert("⚠️ Please wait, Firebase is still initializing");
+        return;
+    }
+    
     const email = document.getElementById("signup-email").value;
     const password = document.getElementById("signup-password").value;
     
@@ -115,11 +150,18 @@ function handleSignup() {
             document.getElementById("signup-form").reset();
         })
         .catch(error => {
+            console.error("Signup error:", error);
             alert("⚠️ " + error.message);
         });
 }
 
 function handleLogin() {
+    if (!firebaseInitialized) {
+        console.warn("Firebase not initialized yet");
+        alert("⚠️ Please wait, Firebase is still initializing");
+        return;
+    }
+    
     // Get the Firebase auth from the global variable
     const auth = window.firebaseAuth || globalAuth;
     
@@ -136,8 +178,11 @@ function handleLogin() {
         return;
     }
     
+    console.log("Attempting to sign in with:", email);
+    
     signInWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
+            console.log("Login successful");
             const user = userCredential.user;
             userEmailSpan.textContent = user.email;
             
@@ -155,6 +200,12 @@ function handleLogin() {
 }
 
 function handleFeedbackSubmit() {
+    if (!firebaseInitialized) {
+        console.warn("Firebase not initialized yet");
+        alert("⚠️ Please wait, Firebase is still initializing");
+        return;
+    }
+    
     // Get the Firebase auth from the global variable
     const auth = window.firebaseAuth || globalAuth;
     const db = window.firebaseDb || globalDb;
@@ -195,24 +246,23 @@ function handleFeedbackSubmit() {
         alert("✅ Feedback submitted successfully!");
         feedbackForm.reset();
         
-        // Immediate display of the new feedback without waiting for the listener
-        const sanitizedFeedback = DOMPurify.sanitize(feedbackText);
-        const dateDisplay = timestamp.toLocaleString();
-        
-        // Add at the beginning of the feedback list
-        const newFeedbackItem = document.createElement('div');
-        newFeedbackItem.className = 'feedback-item';
-        newFeedbackItem.innerHTML = `
-            <p class="feedback-text">${sanitizedFeedback}</p>
-            <p class="feedback-date">${dateDisplay}</p>
-        `;
-        
-        // If there was a "no feedback" message, remove it first
-        if (feedbackMessages.innerHTML.includes("No feedback submitted yet")) {
-            feedbackMessages.innerHTML = "";
+        // Make sure DOMPurify is available
+        if (typeof DOMPurify === 'undefined') {
+            console.warn("DOMPurify not found, using basic sanitization");
+            // Basic sanitization as fallback
+            const sanitizedFeedback = feedbackText
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+                
+            displayNewFeedback(sanitizedFeedback, timestamp);
+        } else {
+            // Use DOMPurify if available
+            const sanitizedFeedback = DOMPurify.sanitize(feedbackText);
+            displayNewFeedback(sanitizedFeedback, timestamp);
         }
-        
-        feedbackMessages.insertBefore(newFeedbackItem, feedbackMessages.firstChild);
     })
     .catch((error) => {
         console.error("Feedback submission error:", error);
@@ -220,58 +270,98 @@ function handleFeedbackSubmit() {
     });
 }
 
+// Helper function to display new feedback
+function displayNewFeedback(sanitizedFeedback, timestamp) {
+    if (!feedbackMessages) {
+        feedbackMessages = document.getElementById("feedback-messages");
+        if (!feedbackMessages) {
+            console.error("Feedback messages element not found");
+            return;
+        }
+    }
+    
+    const dateDisplay = timestamp.toLocaleString();
+    
+    // Add at the beginning of the feedback list
+    const newFeedbackItem = document.createElement('div');
+    newFeedbackItem.className = 'feedback-item';
+    newFeedbackItem.innerHTML = `
+        <p class="feedback-text">${sanitizedFeedback}</p>
+        <p class="feedback-date">${dateDisplay}</p>
+    `;
+    
+    // If there was a "no feedback" message, remove it first
+    if (feedbackMessages.innerHTML.includes("No feedback submitted yet")) {
+        feedbackMessages.innerHTML = "";
+    }
+    
+    feedbackMessages.insertBefore(newFeedbackItem, feedbackMessages.firstChild);
+}
+
 function setupAuthHandlers() {
-    const { auth, db } = getFirebase();
+    console.log("Setting up auth handlers");
     
-    // Store Firebase services in global variables for the handlers
-    globalAuth = auth;
-    globalDb = db;
-    
-    if (!auth || !db) {
-        console.error("Firebase auth or db not initialized");
-        return;
-    }
+    try {
+        const { auth, db } = getFirebase();
+        
+        // Store Firebase services in global variables for the handlers
+        globalAuth = auth;
+        globalDb = db;
+        
+        if (!auth || !db) {
+            console.error("Firebase auth or db not initialized");
+            return;
+        }
 
-    // Make sure DOM elements are initialized
-    if (!logoutButton) {
-        logoutButton = document.getElementById("logout");
-    }
+        // Make sure DOM elements are initialized
+        if (!logoutButton) {
+            logoutButton = document.getElementById("logout");
+        }
 
-    // Logout Handler
-    if (logoutButton) {
-        logoutButton.addEventListener("click", async () => {
-            try {
-                await signOut(auth);
-                
-                // Show auth section, hide dashboard
-                authSection.style.display = "block";
-                dashboard.style.display = "none";
-                
-                // Clear feedback messages
-                feedbackMessages.innerHTML = "";
-                
-                alert("✅ Logged out successfully!");
-            } catch (error) {
-                console.error("Logout error:", error);
-                alert("⚠️ " + error.message);
+        // Logout Handler
+        if (logoutButton) {
+            logoutButton.addEventListener("click", async () => {
+                try {
+                    await signOut(auth);
+                    
+                    // Show auth section, hide dashboard
+                    authSection.style.display = "block";
+                    dashboard.style.display = "none";
+                    
+                    // Clear feedback messages
+                    if (feedbackMessages) {
+                        feedbackMessages.innerHTML = "";
+                    }
+                    
+                    alert("✅ Logged out successfully!");
+                } catch (error) {
+                    console.error("Logout error:", error);
+                    alert("⚠️ " + error.message);
+                }
+            });
+        } else {
+            console.warn("Logout button not found");
+        }
+
+        // Auth State Change Listener
+        onAuthStateChanged(auth, (user) => {
+            console.log("Auth state changed:", user ? "User logged in" : "User logged out");
+            
+            if (user) {
+                // User is signed in
+                if (userEmailSpan) userEmailSpan.textContent = user.email;
+                if (authSection) authSection.style.display = "none";
+                if (dashboard) dashboard.style.display = "block";
+                loadUserFeedback(user.uid);
+            } else {
+                // User is signed out
+                if (authSection) authSection.style.display = "block";
+                if (dashboard) dashboard.style.display = "none";
             }
         });
+    } catch (error) {
+        console.error("Error in setupAuthHandlers:", error);
     }
-
-    // Auth State Change Listener
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            // User is signed in
-            if (userEmailSpan) userEmailSpan.textContent = user.email;
-            if (authSection) authSection.style.display = "none";
-            if (dashboard) dashboard.style.display = "block";
-            loadUserFeedback(user.uid);
-        } else {
-            // User is signed out
-            if (authSection) authSection.style.display = "block";
-            if (dashboard) dashboard.style.display = "none";
-        }
-    });
 }
 
 // Load User Feedback from Firestore with Debug Logging
@@ -341,8 +431,19 @@ function loadUserFeedback(userId) {
                         }
                     }
                     
-                    // Sanitize feedback using DOMPurify
-                    const sanitizedFeedback = DOMPurify.sanitize(feedbackContent);
+                    // Sanitize feedback using DOMPurify or fallback
+                    let sanitizedFeedback;
+                    if (typeof DOMPurify !== 'undefined') {
+                        sanitizedFeedback = DOMPurify.sanitize(feedbackContent);
+                    } else {
+                        // Basic sanitization as fallback
+                        sanitizedFeedback = feedbackContent
+                            .replace(/&/g, "&amp;")
+                            .replace(/</g, "&lt;")
+                            .replace(/>/g, "&gt;")
+                            .replace(/"/g, "&quot;")
+                            .replace(/'/g, "&#039;");
+                    }
                     
                     // Add the feedback item to the display
                     feedbackMessages.innerHTML += `
