@@ -1,6 +1,6 @@
-// firebase-init.js
+// Modified firebase-init.js with persistence
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 console.log("Initializing Firebase");
@@ -20,6 +20,16 @@ async function initializeFirebase() {
     
     const app = initializeApp(config);
     const auth = getAuth(app);
+    
+    // Set persistence to LOCAL - this will maintain the session
+    // even when the page is refreshed or closed and reopened
+    try {
+      await setPersistence(auth, browserLocalPersistence);
+      console.log("✅ Firebase auth persistence set to LOCAL");
+    } catch (persistenceError) {
+      console.error("❌ Error setting auth persistence:", persistenceError);
+    }
+    
     const db = getFirestore(app);
     
     // Make services available globally
@@ -41,7 +51,7 @@ async function initializeFirebase() {
   }
 }
 
-// We'll initialize Firebase and then export the services
+// initialize Firebase and then export the services
 let app, auth, db;
 
 // Immediately execute the initialization
