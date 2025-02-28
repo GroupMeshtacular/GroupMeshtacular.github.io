@@ -22,7 +22,7 @@ Meshtacular is a **group of Undergrads at Georgia State University** focused on 
 ## 🏗️ **Project Roadmap**
 | Phase | Task | Status |
 |-------|------|--------|
-| 🟢 | **Setup GitHub Pages** | ✅ Completed |
+| 🟢 | **Host on Firebase with Database Functionality** | ✅ Completed |
 | 🟡 | **Implement Website Design** | ✅ Completed |
 | 🔴 | **Develop Core Networking Features** | ✅ Completed |
 | 🟣 | **Optimize & Deploy** | ✅ Completed |
@@ -33,10 +33,13 @@ Meshtacular is a **group of Undergrads at Georgia State University** focused on 
 
 ## 🔒 **Security & Networking Features**
 ⚠️ This project follows **modern cybersecurity practices**, including:
-- ✅ **DNS Handling**: Resolving domain **groupmeshtacular.github.io** to an IP address.
-- ✅ **IP Addressing**: Hosted via **GitHub infrastructure**.
+- ✅ **DNS Handling**: Resolving domain **group-meshtacular.web.app** to an IP address.
+- ✅ **IP Addressing**: Hosted via **Hosted on Firebase's infrastructure**.
 - ✅ **HTTPS Encryption**: Secured using **SSL/TLS certificates**.
 - ✅ **Networking Protocols**: Studying & implementing **HTTP, DNS, and more**.
+- ✅ **SQL & XSS Attack Protection**: Sanitizes user input with**DOMPurify**.
+- ✅ **Brute-Force Login Protection**: Preventing user abuse with a **Rate Limiter**.
+- ✅ **Cookies & CSRF Protection**: Using a CORS config and **Cookie Parser**.
 
 ---
 
@@ -52,10 +55,12 @@ git clone https://github.com/groupmeshtacular/groupmeshtacular.github.io.git
 
 ## 🛠 **Technologies Used**
 🚀 This project is powered by:
-- **🌍 HTML & CSS** – Structuring and styling the website.
+- **🌍 HTML,CSS, Javascript** – Structuring, styling, and functionality for the website.
 - **🎨 Custom Dark UI** – A hacker-style aesthetic.
-- **🔧 GitHub Pages** – Free hosting.
+- **🔧 Google Firebase** – Free hosting and Database.
 - **🔐 Cybersecurity Best Practices** – HTTPS, DNS, IP handling.
+- **📂 Database Integration** – Firebase Firestore, User Data Storage, Dynamic User Feedback Integration.
+- **🚀 Deployment & Infrastructure** – Firebase Hosting & GitHub Actions Automated Deployment
 
 ---
 
