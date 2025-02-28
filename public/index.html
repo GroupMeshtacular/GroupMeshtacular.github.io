@@ -12,8 +12,6 @@ Spring Semester 2025-->
     <link rel="stylesheet" href="style.css">
     <!--sanitize content before display using DOMPurify-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
-    <!-- Import Firebase initialization script -->
-    <script type="module" src="firebase-init.js"></script>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-T0HER5K5PQ"></script>
     <script>
@@ -35,19 +33,19 @@ Spring Semester 2025-->
         <div class="auth-container">
             <div class="auth-form">
                 <h2>Sign Up</h2>
-                <form id="signup-form" onsubmit="event.preventDefault(); handleSignup();">
+                <form id="signup-form">
                     <input type="email" id="signup-email" placeholder="Email" required>
                     <input type="password" id="signup-password" placeholder="Password" required>
-                    <button type="button" onclick="handleSignup()">Sign Up</button>
+                    <button type="submit">Sign Up</button>
                 </form>
             </div>
             
             <div class="auth-form">
                 <h2>Login</h2>
-                <form id="login-form" onsubmit="event.preventDefault(); handleLogin();">
+                <form id="login-form">
                     <input type="email" id="login-email" placeholder="Email" required>
                     <input type="password" id="login-password" placeholder="Password" required>
-                    <button type="button" onclick="handleLogin()">Login</button>
+                    <button type="submit">Login</button>
                 </form>
             </div>
         </div>
@@ -60,10 +58,10 @@ Spring Semester 2025-->
         <!-- Feedback Form -->
         <div class="feedback-container">
             <h3>Submit Feedback</h3>
-            <form id="feedback-form" onsubmit="event.preventDefault(); handleFeedbackSubmit();">
+            <form id="feedback-form">
                 <label for="feedback">Your Feedback:</label>
                 <textarea id="feedback" name="feedback" required></textarea>
-                <button type="button" onclick="handleFeedbackSubmit()">Submit Feedback</button>
+                <button type="submit">Submit Feedback</button>
             </form>
         </div>
         
@@ -78,333 +76,8 @@ Spring Semester 2025-->
 
     <!-- Import Firebase initialization script -->
     <script type="module" src="firebase-init.js"></script>
-
-    <!-- Handle Firebase Authentication -->
-    <script type="module">
-        // Import necessary Firebase modules
-        import { getFirebase } from './firebase-init.js';
-        import { auth, db } from './firebase-init.js';
-        import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { collection, addDoc, query, orderBy, where, onSnapshot, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        // Add extensive debug logging
-        console.log("Script loading...");
-
-        // Create error handler for unhandled promise rejections
-        window.addEventListener('unhandledrejection', function(event) {
-            console.error('Unhandled promise rejection:', event.reason);
-        });
-
-        // Setup debug logging for form submissions
-        const debugEvent = (name) => {
-            return (...args) => {
-                console.log(`Event '${name}' triggered with:`, args);
-            };
-        };
-
-        // Monitor for clicks
-        document.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                console.log("Button clicked:", e.target.textContent, e.target);
-            }
-        });
-
-        // Clean up URL if it contains the _csrf parameter
-        if (window.location.search.includes('_csrf=')) {
-            const cleanUrl = window.location.pathname;
-            window.history.replaceState({}, document.title, cleanUrl);
-            console.log("URL cleaned from CSRF parameter");
-        }
-
-        // DOM Elements
-        const authSection = document.getElementById("auth-section");
-        const dashboard = document.getElementById("dashboard");
-        const userEmailSpan = document.getElementById("user-email");
-        const signupForm = document.getElementById("signup-form");
-        const loginForm = document.getElementById("login-form");
-        const feedbackForm = document.getElementById("feedback-form");
-        const feedbackMessages = document.getElementById("feedback-messages");
-        const logoutButton = document.getElementById("logout");
-
-        // Global variables for Firebase services
-        let globalAuth, globalDb;
-
-        // Try to get Firebase services directly
-        try {
-            globalAuth = auth;
-            globalDb = db;
-            console.log("Firebase services accessed directly:", !!globalAuth, !!globalDb);
-            
-            // If we have both services, setup immediately
-            if (globalAuth && globalDb) {
-                console.log("Firebase services available, setting up immediately");
-                setupAuthHandlers();
-            }
-        } catch (error) {
-            console.log("Couldn't get Firebase services directly, waiting for initialization event");
-        }
-
-        // Wait for Firebase to initialize (as a backup)
-        document.addEventListener('firebaseInitialized', () => {
-            console.log("Firebase initialized event received");
-            setupAuthHandlers();
-        });
-
-        // Define handler functions for button clicks
-        // Global handler functions that can be called from HTML
-        function handleSignup() {
-            const email = document.getElementById("signup-email").value;
-            const password = document.getElementById("signup-password").value;
-            
-            if (!email || !password) {
-                alert("⚠️ Email and password are required");
-                return;
-            }
-            
-            // Access Firebase Auth from the window object
-            const auth = window.firebaseAuth;
-            
-            if (!auth) {
-              alert("⚠️ Firebase authentication not initialized");
-              return;
-            }
-            
-            // Import the function dynamically
-            import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js")
-              .then(firebaseAuth => {
-                firebaseAuth.createUserWithEmailAndPassword(auth, email, password)
-                  .then(userCredential => {
-                    alert("✅ Signup successful!");
-                    document.getElementById("signup-form").reset();
-                  })
-                  .catch(error => {
-                    alert("⚠️ " + error.message);
-                  });
-        });
-
-        function handleLogin() {
-            // Get the Firebase auth from the global variable
-            const auth = window.firebaseAuth;
-            const db = window.firebaseDb;
-            
-            const email = document.getElementById("login-email").value;
-            const password = document.getElementById("login-password").value;
-            
-            if (!email || !password) {
-                alert("⚠️ Email and password are required");
-                return;
-            }
-            
-            signInWithEmailAndPassword(globalAuth, email, password)
-                .then((userCredential) => {
-                    const user = userCredential.user;
-                    userEmailSpan.textContent = user.email;
-                    
-                    // Show dashboard, hide auth section
-                    authSection.style.display = "none";
-                    dashboard.style.display = "block";
-                    
-                    // Load user's feedback
-                    loadUserFeedback(user.uid);
-                })
-                .catch((error) => {
-                    console.error("Login error:", error);
-                    alert("⚠️ " + error.message);
-                });
-        };
-
-        function handleFeedbackSubmit() {
-            // Get the Firebase auth from the global variable
-            const auth = window.firebaseAuth;
-            const db = window.firebaseDb;
-
-            
-            if (!user) {
-                alert("⚠️ You must be logged in to submit feedback.");
-                return;
-            }
-            
-            if (!feedbackText.trim()) {
-                alert("⚠️ Please enter some feedback before submitting.");
-                return;
-            }
-            
-            console.log("Submitting feedback for user:", user.uid);
-            
-            // Create a timestamp to use in the feedback document
-            const timestamp = new Date();
-            
-            // Add the feedback document to Firestore
-            addDoc(collection(globalDb, "feedback"), {
-                userId: user.uid,
-                email: user.email,
-                feedback: feedbackText,
-                timestamp: timestamp
-            })
-            .then((docRef) => {
-                console.log("Feedback submitted with ID:", docRef.id);
-                
-                alert("✅ Feedback submitted successfully!");
-                feedbackForm.reset();
-                
-                // Immediate display of the new feedback without waiting for the listener
-                const sanitizedFeedback = DOMPurify.sanitize(feedbackText);
-                const dateDisplay = timestamp.toLocaleString();
-                
-                // Add at the beginning of the feedback list
-                const newFeedbackItem = document.createElement('div');
-                newFeedbackItem.className = 'feedback-item';
-                newFeedbackItem.innerHTML = `
-                    <p class="feedback-text">${sanitizedFeedback}</p>
-                    <p class="feedback-date">${dateDisplay}</p>
-                `;
-                
-                // If there was a "no feedback" message, remove it first
-                if (feedbackMessages.innerHTML.includes("No feedback submitted yet")) {
-                    feedbackMessages.innerHTML = "";
-                }
-                
-                feedbackMessages.insertBefore(newFeedbackItem, feedbackMessages.firstChild);
-            })
-            .catch((error) => {
-                console.error("Feedback submission error:", error);
-                alert("⚠️ Error submitting feedback: " + error.message);
-            });
-        };
-
-        // Wait for Firebase to initialize before setting up event handlers
-        document.addEventListener('firebaseInitialized', setupAuthHandlers);
-
-        function setupAuthHandlers() {
-            const { auth, db } = getFirebase();
-            
-            // Store Firebase services in global variables for the handlers
-            globalAuth = auth;
-            globalDb = db;
-            
-            if (!auth || !db) {
-                console.error("Firebase auth or db not initialized");
-                return;
-            }
-
-            // Logout Handler
-            logoutButton.addEventListener("click", async () => {
-                try {
-                    await signOut(auth);
-                    
-                    // Show auth section, hide dashboard
-                    authSection.style.display = "block";
-                    dashboard.style.display = "none";
-                    
-                    // Clear feedback messages
-                    feedbackMessages.innerHTML = "";
-                    
-                    alert("✅ Logged out successfully!");
-                } catch (error) {
-                    console.error("Logout error:", error);
-                    alert("⚠️ " + error.message);
-                }
-            });
-
-            // Auth State Change Listener
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    // User is signed in
-                    userEmailSpan.textContent = user.email;
-                    authSection.style.display = "none";
-                    dashboard.style.display = "block";
-                    loadUserFeedback(user.uid);
-                } else {
-                    // User is signed out
-                    authSection.style.display = "block";
-                    dashboard.style.display = "none";
-                }
-            });
-        };
-
-        // Load User Feedback from Firestore with Debug Logging
-        function loadUserFeedback(userId) {
-            console.log("Loading feedback for user:", userId);
-            
-            if (!globalDb) {
-                console.error("Firestore not initialized");
-                feedbackMessages.innerHTML = "<p>Error: Database connection not available</p>";
-                return;
-            }
-            
-            try {
-                // Try to get a reference to the feedback collection
-                const feedbackCollection = collection(globalDb, "feedback");
-                
-                // Log to verify collection access
-                console.log("Accessing feedback collection");
-                
-                // Create query for user's feedback - notice we're removing orderBy for now
-                // This is because it can cause errors if you don't have the right indexes set up
-                const q = query(
-                    feedbackCollection, 
-                    where("userId", "==", userId)
-                );
-                
-                console.log("Query created, setting up real-time listener");
-                
-                // Listen for real-time updates
-                onSnapshot(q, (snapshot) => {
-                    console.log("Feedback snapshot received, documents count:", snapshot.size);
-                    feedbackMessages.innerHTML = "";
-                    
-                    if (snapshot.empty) {
-                        console.log("No feedback found for this user");
-                        feedbackMessages.innerHTML = "<p>No feedback submitted yet. Try adding some!</p>";
-                    } else {
-                        snapshot.forEach((doc) => {
-                            const data = doc.data();
-                            console.log("Feedback document:", doc.id, data);
-                            
-                            // Check for either feedback or message field
-                            const feedbackContent = data.feedback || data.message || "No content";
-                            
-                            // Handle different timestamp formats
-                            let dateDisplay = "Unknown date";
-                            if (data.timestamp) {
-                                try {
-                                    // Try to handle Firestore timestamp objects
-                                    if (typeof data.timestamp.toDate === 'function') {
-                                        dateDisplay = data.timestamp.toDate().toLocaleString();
-                                    } else {
-                                        // Handle regular Date objects or timestamps
-                                        dateDisplay = new Date(data.timestamp).toLocaleString();
-                                    }
-                                } catch (err) {
-                                    console.error("Error formatting date:", err);
-                                }
-                            }
-                            
-                            // Sanitize feedback using DOMPurify
-                            const sanitizedFeedback = DOMPurify.sanitize(feedbackContent);
-                            
-                            // Add the feedback item to the display
-                            feedbackMessages.innerHTML += `
-                                <div class="feedback-item">
-                                    <p class="feedback-text">${sanitizedFeedback}</p>
-                                    <p class="feedback-date">${dateDisplay}</p>
-                                </div>
-                            `;
-                        });
-                    }
-                }, error => {
-                    console.error("Error loading feedback:", error);
-                    feedbackMessages.innerHTML = `<p class="error">Error loading feedback: ${error.message}</p>`;
-                });
-            } catch (error) {
-                console.error("Error setting up feedback listener:", error);
-                feedbackMessages.innerHTML = `<p class="error">Error setting up feedback listener: ${error.message}</p>`;
-            }
-        }
-
-        // Try to initialize immediately as well (in case the event already fired)
-        setupAuthHandlers();
-    </script>
+    <!-- Import auth scripts -->
+    <script type="module" src="auth-scripts.js"></script>
 
     <section class="intro">
         <h2>🌐 Welcome Hackers & Builders!</h2>
@@ -421,7 +94,7 @@ Spring Semester 2025-->
         <h2>📌 What is Meshtacular?</h2>
         <p>Meshtacular is a <strong>group of Undergrads at Georgia State University</strong> focused on developing <strong>secure, efficient, and innovative</strong> software. This website serves as:</p>
         <ul>
-            <li>📂 A <strong>landing page</strong> for our group’s progress.</li>
+            <li>📂 A <strong>landing page</strong> for our group's progress.</li>
             <li>📡 A hub for <strong>our networking-based projects</strong>.</li>
             <li>🛠 A place to <strong>document our coding journey</strong> and discoveries.</li>
         </ul>
@@ -473,7 +146,7 @@ Spring Semester 2025-->
         <p>This website follows security best practices, including:</p>
         <ul>
             <li>✅ <strong>DNS:</strong> Resolves the domain <code>group-meshtacular.web.app/</code> to an IP address.</li>
-            <li>✅ <strong>IP Address:</strong> Hosted on Firebase’s infrastructure (<code>199.36.158.100</code>).</li>
+            <li>✅ <strong>IP Address:</strong> Hosted on Firebase's infrastructure (<code>199.36.158.100</code>).</li>
             <li>✅ <strong>HTTPS:</strong> Secure encryption enabled using SSL.</li>
             <li>✅ <strong>HTTP Protocol:</strong> Requests are served using HTTP/HTTPS.</li>
         </ul>
@@ -492,7 +165,7 @@ Spring Semester 2025-->
 
     <footer>
         <h2>🚀 Stay Tuned!</h2>
-        <p>🛡️ As we develop this website, we’ll continue to add <strong>new features, security enhancements, and networking tools</strong>. Stay tuned and follow our progress!</p>
+        <p>🛡️ As we develop this website, we'll continue to add <strong>new features, security enhancements, and networking tools</strong>. Stay tuned and follow our progress!</p>
         <p>💻 <em>Happy Hacking!</em> 🕶️</p>
          <pre style="font-family: 'Fira Code', monospace; text-align: center; color: #6899ca; background-color: #161b22; padding: 20px; border-radius: 10px; margin-top: 20px; font-size: 5px;">
             .,,uod8B8bou,,.
@@ -530,6 +203,3 @@ Spring Semester 2025-->
 
 </body>
 </html>
-
-
-
