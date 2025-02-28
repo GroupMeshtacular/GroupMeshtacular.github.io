@@ -249,7 +249,91 @@ function handleLogin() {
         });
 }
 
+// Updated handleFeedbackSubmit function to avoid duplicate displays
 function handleFeedbackSubmit() {
+    if (!firebaseInitialized) {
+        console.warn("Firebase not initialized yet");
+        showStatusMessage("error", "⚠️ Please wait, Firebase is still initializing");
+        return;
+    }
+    
+    // Get the Firebase auth and db
+    const auth = window.firebaseAuth || globalAuth;
+    const db = window.firebaseDb || globalDb;
+    
+    if (!auth || !db) {
+        showStatusMessage("error", "⚠️ Firebase not initialized");
+        return;
+    }
+    
+    const user = auth.currentUser;
+    const feedbackText = document.getElementById("feedback").value;
+    
+    if (!user) {
+        showStatusMessage("error", "⚠️ You must be logged in to submit feedback.");
+        return;
+    }
+    
+    if (!feedbackText.trim()) {
+        showStatusMessage("error", "⚠️ Please enter some feedback before submitting.");
+        return;
+    }
+    
+    // Show loading indicator
+    toggleLoadingState(true);
+    
+    console.log("Submitting feedback for user:", user.uid);
+    
+    // Sanitize feedback before storing it
+    let sanitizedFeedback;
+    if (typeof DOMPurify !== 'undefined') {
+        // Use DOMPurify if available
+        sanitizedFeedback = DOMPurify.sanitize(feedbackText);
+    } else {
+        // Basic sanitization as fallback
+        sanitizedFeedback = feedbackText
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+    
+    // Create a timestamp to use in the feedback document
+    const timestamp = new Date();
+    
+    // Add the feedback document to Firestore
+    addDoc(collection(db, "feedback"), {
+        userId: user.uid,
+        email: user.email,
+        feedback: sanitizedFeedback, // Store the sanitized feedback
+        timestamp: timestamp
+    })
+    .then((docRef) => {
+        console.log("Feedback submitted with ID:", docRef.id);
+        
+        // Hide loading indicator
+        toggleLoadingState(false);
+        
+        // Show success message
+        showStatusMessage("success", "✅ Feedback submitted successfully!");
+        
+        // Reset form
+        feedbackForm.reset();
+        
+        // Clear status message after 3 seconds
+        setTimeout(() => {
+            hideStatusMessage();
+        }, 3000);
+    })
+    .catch((error) => {
+        console.error("Feedback submission error:", error);
+        toggleLoadingState(false);
+        showStatusMessage("error", "⚠️ Error submitting feedback: " + error.message);
+    });
+}
+
+/*function handleFeedbackSubmit() {
     if (!firebaseInitialized) {
         console.warn("Firebase not initialized yet");
         alert("⚠️ Please wait, Firebase is still initializing");
@@ -319,6 +403,7 @@ function handleFeedbackSubmit() {
         alert("⚠️ Error submitting feedback: " + error.message);
     });
 }
+*/
 
 // Helper function to display new feedback
 function displayNewFeedback(sanitizedFeedback, timestamp) {
