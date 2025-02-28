@@ -76,8 +76,11 @@ Spring Semester 2025-->
         <button id="logout">Logout</button>
     </section>
 
+    <!-- Import Firebase initialization script -->
+    <script type="module" src="firebase-init.js"></script>
+
     <!-- Handle Firebase Authentication -->
-    <script type="module" src="firebase-init.js">
+    <script type="module">
         // Import necessary Firebase modules
         import { getFirebase } from './firebase-init.js';
         import { auth, db } from './firebase-init.js';
@@ -148,7 +151,12 @@ Spring Semester 2025-->
         });
 
         // Define handler functions for button clicks
-        window.handleSignup = function() {
+        // Global handler functions that can be called from HTML
+        function handleSignup() {
+            // Get the Firebase auth from the global variable
+            const auth = window.firebaseAuth;
+            const db = window.firebaseDb;
+            
             const email = document.getElementById("signup-email").value;
             const password = document.getElementById("signup-password").value;
             
@@ -176,7 +184,11 @@ Spring Semester 2025-->
                 });
         };
 
-        window.handleLogin = function() {
+        function handleLogin() {
+            // Get the Firebase auth from the global variable
+            const auth = window.firebaseAuth;
+            const db = window.firebaseDb;
+            
             const email = document.getElementById("login-email").value;
             const password = document.getElementById("login-password").value;
             
@@ -203,9 +215,11 @@ Spring Semester 2025-->
                 });
         };
 
-        window.handleFeedbackSubmit = function() {
-            const feedbackText = document.getElementById("feedback").value;
-            const user = globalAuth.currentUser;
+        function handleFeedbackSubmit() {
+            // Get the Firebase auth from the global variable
+            const auth = window.firebaseAuth;
+            const db = window.firebaseDb;
+
             
             if (!user) {
                 alert("⚠️ You must be logged in to submit feedback.");
