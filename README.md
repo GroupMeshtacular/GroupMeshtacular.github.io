@@ -38,7 +38,7 @@ Meshtacular is a **group of Undergrads at Georgia State University** focused on 
 - ✅ **HTTPS Encryption**: Secured using **SSL/TLS certificates**.
 - ✅ **Networking Protocols**: Studying & implementing **HTTP, DNS, and more**.
 - ✅ **SQL & XSS Attack Protection**: Sanitizes user input with **DOMPurify**.
-- ✅ **Brute-Force Login Protection**: Preventing user's abusive behavior with a **Rate Limiter**.
+- ✅ **Brute-Force Login Protection**: Preventing abusive behavior from user with a **Rate Limiter**.
 - ✅ **Cookies & CSRF Protection**: Using a CORS config and **Cookie Parser**.
 
 ---
