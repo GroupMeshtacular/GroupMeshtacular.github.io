@@ -60,9 +60,9 @@ Meshtacular is a **group of Undergrads at Georgia State University** focused on 
    cd groupmeshtacular.github.io
    ```
 
-2. Install dependencies:
+2. Install server dependencies:
    ```bash
-   npm install
+   npm install express express-rate-limit cookie-parser path cors dotenv firebase-admin
    ```
 
 3. Log in to Firebase:
@@ -78,9 +78,14 @@ Meshtacular is a **group of Undergrads at Georgia State University** focused on 
    - Configure as a single-page app: `No`
    - Set up automatic builds and deploys: `No`
 
-5. Add your Firebase configuration:
+5. Create a Firebase project (if you don't have one):
+   - Go to the [Firebase Console](https://console.firebase.google.com/)
+   - Click "Add project" and follow the setup wizard
+   - Enable Authentication and Firestore in your project
+
+6. Add your Firebase configuration:
    - Create a `.env` file in the root directory
-   - Add your Firebase config (get this from your Firebase console):
+   - Add your Firebase Admin SDK configuration (get this from Firebase Console → Project Settings → Service Accounts → Generate new private key):
      ```
      FIREBASE_ADMIN_SDK={"type":"service_account","project_id":"your-project-id",...}
      ```
@@ -101,7 +106,13 @@ Meshtacular is a **group of Undergrads at Georgia State University** focused on 
 ### Development Workflow
 - Edit HTML, CSS, and JavaScript files directly
 - The website will update when you refresh the browser
-- For server changes, restart the Node.js server
+- For server changes, restart the Node.js server with `node server.js`
+- Test authentication and feedback submission locally
+
+### Troubleshooting
+- If you see CORS errors, ensure your Firebase project's hosting URL is added to the CORS origins in `server.js`
+- Authentication issues may require enabling Email/Password provider in Firebase Authentication
+- For database errors, check that your Firestore rules allow read/write operations
 
 ### Deployment
 If you want to deploy your version to Firebase:
