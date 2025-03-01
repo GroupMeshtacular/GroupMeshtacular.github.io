@@ -37,8 +37,8 @@ Meshtacular is a **group of Undergrads at Georgia State University** focused on 
 - ✅ **IP Addressing**: Hosted via **Hosted on Firebase's infrastructure**.
 - ✅ **HTTPS Encryption**: Secured using **SSL/TLS certificates**.
 - ✅ **Networking Protocols**: Studying & implementing **HTTP, DNS, and more**.
-- ✅ **SQL & XSS Attack Protection**: Sanitizes user input with**DOMPurify**.
-- ✅ **Brute-Force Login Protection**: Preventing user abuse with a **Rate Limiter**.
+- ✅ **SQL & XSS Attack Protection**: Sanitizes user input with **DOMPurify**.
+- ✅ **Brute-Force Login Protection**: Preventing user's abusive behavior with a **Rate Limiter**.
 - ✅ **Cookies & CSRF Protection**: Using a CORS config and **Cookie Parser**.
 
 ---
