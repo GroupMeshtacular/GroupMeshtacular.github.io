@@ -13,7 +13,7 @@ This repository serves as our **documented journey** as we build our **networkin
 
 ## 📌 **What is Meshtacular?**
 Meshtacular is a **group of Undergrads at Georgia State University** focused on developing **secure, efficient, and innovative** software. This repository will serve as:
-- 📂 A **landing page** for our group’s progress.
+- 📂 A **landing page** for our group's progress.
 - 📡 A hub for **our networking-based projects**.
 - 🛠 A place to **document our coding journey** and discoveries.
 
@@ -46,10 +46,70 @@ Meshtacular is a **group of Undergrads at Georgia State University** focused on 
 ## 💻 **How to Access the Website**
 🎯 Check out our **live site** here: [Meshtacular Website](https://group-meshtacular.web.app/)
 
-To clone this repository locally:
+## 🚀 **Running the Project Locally**
 
-# Clone the repo
-git clone https://github.com/groupmeshtacular/groupmeshtacular.github.io.git
+### Prerequisites
+- Node.js (v14 or higher)
+- npm (v6 or higher)
+- Firebase CLI: `npm install -g firebase-tools`
+
+### Clone and Setup
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/groupmeshtacular/groupmeshtacular.github.io.git
+   cd groupmeshtacular.github.io
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Log in to Firebase:
+   ```bash
+   firebase login
+   ```
+
+4. Initialize Firebase in the project directory (select Hosting and Firestore when prompted):
+   ```bash
+   firebase init
+   ```
+   - When asked about the public directory, enter: `./`
+   - Configure as a single-page app: `No`
+   - Set up automatic builds and deploys: `No`
+
+5. Add your Firebase configuration:
+   - Create a `.env` file in the root directory
+   - Add your Firebase config (get this from your Firebase console):
+     ```
+     FIREBASE_ADMIN_SDK={"type":"service_account","project_id":"your-project-id",...}
+     ```
+
+### Running the Server
+1. Start the local server:
+   ```bash
+   node server.js
+   ```
+
+2. In a new terminal, serve the Firebase hosting:
+   ```bash
+   firebase serve
+   ```
+
+3. Access the website at `http://localhost:5000`
+
+### Development Workflow
+- Edit HTML, CSS, and JavaScript files directly
+- The website will update when you refresh the browser
+- For server changes, restart the Node.js server
+
+### Deployment
+If you want to deploy your version to Firebase:
+```bash
+firebase deploy
+```
+
+*Note: You'll need your own Firebase project and proper permissions to deploy.*
 
 ---
 
@@ -65,7 +125,7 @@ git clone https://github.com/groupmeshtacular/groupmeshtacular.github.io.git
 ---
 
 ## 🚀 **Stay Tuned!**
-🛡️ As we develop this website, we’ll continue to add **new features, security enhancements, and networking tools**. Stay tuned and follow our progress!
+🛡️ As we develop this website, we'll continue to add **new features, security enhancements, and networking tools**. Stay tuned and follow our progress!
 
 ---
 
